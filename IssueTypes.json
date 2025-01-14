@@ -1,0 +1,7 @@
+[
+    {"name": "[System] Incident", "id": 10001},
+    {"name": "[System] Service request", "id": 10002},
+    {"name": "[System] Service request with approvals", "id": 10003},
+    {"name": "[System] Change", "id": 10004},
+    {"name": "[System] Problem", "id": 10005}
+]
