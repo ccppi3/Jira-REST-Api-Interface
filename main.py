@@ -5,6 +5,7 @@
 import requests, json, os
 from requests.auth import HTTPBasicAuth
 from dotenv import load_dotenv
+from pypdf import PdfReader
 
 # load .env file
 load_dotenv()
@@ -18,7 +19,7 @@ token = os.getenv("TOKEN")
 
 # Create the Payload from a Template and input data (List --> 0 = Assignee, 1 = Description, 2 = Issuetype, 3 = Labels, 4 = Priority, 5 = Summary)
 def CreatePayload(data):
-    with open("C:/Users/joel.bonini/.vscode/Jira/TemplatePayload.json", "r") as file:
+    with open("TemplatePayload.json", "r") as file:
         TemplateData = json.load(file)
         payload = TemplateData
         payload["fields"]["assignee"]["id"] = data[0]
@@ -33,6 +34,23 @@ def CreatePayload(data):
 
 
 
+def ParsePdf():
+    reader = PdfReader("Test.Pdf")
+    text = ""
+    for i in range(len(reader.pages)):
+        page = reader.pages[i]
+        text += page.extract_text()
+
+    text = text.splitlines()
+
+    for i in range(len(text)):
+        if "Arbeitsplatzwechsel" in text[i]:
+            print(text[i])
+
+    
+
+
+
 # Headers so the api knows what format of data to expect and what format the response should be
 headers = {
     "Accept": "application/json",
@@ -44,12 +62,12 @@ headers = {
 def main():
     data = [None, "Api test ticket", 10002, ["Neueintritt"], "5", "API Test"]
     payload = CreatePayload(data)
-    print(payload)
+    #print(payload)
     # api call
-    response = requests.post(url, data=payload, headers=headers, auth=HTTPBasicAuth(email, token))
-
-    print(response)
-    print(response.text)
+    #response = requests.post(url, data=payload, headers=headers, auth=HTTPBasicAuth(email, token))
+    #print(response)
+    #print(response.text)
+    ParsePdf()
 
 
 
