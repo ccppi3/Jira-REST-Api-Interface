@@ -1,5 +1,5 @@
 # Jira-REST-Api-Interface
-An Interface to automaticaly create Jira Tickets via thier REST-Api.
+An Interface to automaticaly create Jira Tickets via their REST-Api.
 
 # Main Use Case
 Main Purpose is to create a Ticket whenever there is an onboarding of a new employee.
