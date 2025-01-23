@@ -6,6 +6,8 @@ import requests, json, os
 from requests.auth import HTTPBasicAuth
 from dotenv import load_dotenv
 from pypdf import PdfReader
+import json
+import pymupdf
 
 # load .env file
 load_dotenv()
@@ -35,17 +37,54 @@ def CreatePayload(data):
 
 
 def ParsePdf():
-    reader = PdfReader("Test.Pdf")
+    reader = PdfReader("Test.pdf")
     text = ""
-    for i in range(len(reader.pages)):
-        page = reader.pages[i]
-        text += page.extract_text()
+    print(reader.resolved_objects)
 
-    text = text.splitlines()
+    
+    #for x in reader.resolved_objects:
+    #    print("res_object: ",x)
 
-    for i in range(len(text)):
-        if "Arbeitsplatzwechsel" in text[i]:
-            print(text[i])
+    print("root obj: \n",reader.get_object(1),"\n\n") # root node
+    #print("tree obj: ",reader.get_object(97)) # tree node
+
+    x = reader.get_object(97)
+    childNodesPage1 = reader.get_object(1)["/Pages"]["/Kids"][0]# get all child nodes from page 1 (index0)
+    child2 = reader.get_object(1)["/StructTreeRoot"]["/K"][1]["/K"]
+    print(json.dumps(child2,indent=2,default=str))
+    input()
+    for entry in child2:
+        print("\nlist entry: ",entry)
+        child3 = entry["/K"]
+        print("child3: ",child3)
+
+    #for key in child2:
+    #    print("childnode[",key,"] ")
+    #    print("value: ",patternNodes[key])
+
+
+
+    numpages = reader.get_num_pages()
+    print("number pages: ",numpages)
+
+    page = reader.pages[0] #page 0 -> 1
+    print("page_content: ",page.get_contents())
+    
+    obj = reader.get_object(44)
+    print("obj: ",obj)
+
+    text = page._extract_text(reader.get_object(1206),page.pdf)
+    print("text:",text)
+    #for i in range(len(reader.pages)):
+    #    page = reader.pages[i]
+    #    text = page.extract_text(extraction_mode="layout")
+    #    print("text: ",text)
+
+    #text = text.splitlines()
+
+#    for i in range(len(text)):
+#        if "Arbeitsplatzwechsel" in text[i]:
+#            print(text[i])
 
     
 
