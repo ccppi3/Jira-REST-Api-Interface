@@ -9,10 +9,8 @@ import pymupdf
 import json
 import itertools
 
-DEBUG = False
+DEBUG = True
 PRESEARCH = 5 #The search funtion finds all ocurenses of a string we work arround this issue, bc we need exact matches with a look back of 5 point and reading at this position
-endTable = ["NEUEINTRITT","Arbeitsplatzwechsel","NEUEINTRITTE"]
-
 def log(*s):
     if DEBUG:
         print(s)
@@ -93,21 +91,30 @@ def getEndOfTables(page,fieldName):
     log("endy:",endy)
     return endy
 
-def searchForTable(page):
+def searchForTable(page,tableNames):
     tables = []
-    for i in endTable:
+    for i in tableNames:
       for a in page.search_for(i):
           tables.append(a)
     for x in tables:
         log("tables at: ",transformRect(page,x))
     log("len table:",len(tables))
     for i,table in enumerate(tables):
-        rec =  searchTableEnd(page,table) # if no end is found then remove it from the list
+        rec =  searchTableEnd(page,table) 
         if rec:
             table.y0 = rec.y0
             table.y1 = rec.y1
         else:
-            log("No table end found")
+            log("No table end found use algo2")
+            rec = searchTableDown(page,table)
+            if rec:
+                table.y0 = rec.y0
+                table.y1 = rec.y1
+            else:
+                log("no table found, giving up")
+
+
+            #search with other algorythm
     #remove double tables where if first point match remove the one witch seems to be a line
     for ai,a in enumerate(tables):
         for i in range(ai+1,len(tables)):
@@ -116,42 +123,38 @@ def searchForTable(page):
                 tables.pop(i)
     return tables
 
-def searchTableEnd(page,table):
+def searchTableEnd(page,table): #search the table border by moving to the left
     border = Border(table.x0-10,table.y0-10,table.x0+10,table.y0+10,3)
     for rect in getRectsInRange(page,border):
         if abs(rect.x1 - rect.x0) < 3 and abs(rect.y0 - rect.y1) > 20: #is it a line? and filter out very short lines
             log("Potential border of table:",transformRect(page,rect))
             return rect
     return False
+def searchTableDown(page,table):
+    biggesty = 0
+    smallesty = None
+    border = Border(table.x0-10,table.y0-10,table.x0+10,table.y0+50,3)
+    for rect in getRectsInRange(page,border):
+        if abs(rect.x1 - rect.x0) < 3: #and abs(rect.y0 - rect.y1) > 20: #is it a line? do not filter short lines
+            log("Potential border of table:",transformRect(page,rect))
+            if(rect.y1 > biggesty):
+                biggesty = rect.y1
+                log("biggesty[mypfcoordinate]:",biggesty)
+            if not smallesty:
+                smallesty = rect.y0
+            if(rect.y0 < smallesty):
+                smallesty = rect.y0
+                log("smallest[mypfcoordinate]:",smallesty)
+    if rect:
+        final_rect = rect
+        final_rect.y1 = biggesty
+        final_rect.y0 = smallesty
+        log("table border calculated:",transformRect(page,final_rect))
+        return final_rect
+    return False
 
 
-def searchContentFromRowName(page,rowName,table_border):
-    break_loop = False
-    name = page.search_for(rowName) #returns list of Rect
-    for i in name:
-        if table_border.check(i.x0,i.y0): # is the row inside the border/table?
-            log("----")
-            newrec = pymupdf.Rect(i.x0-PRESEARCH,i.y0,i.x1+PRESEARCH,i.y1)
-            real_name = page.get_textbox(newrec).strip()
-            log(real_name,";",rowName,";",transformRect(page,newrec))
-            if real_name == rowName:
-                border = Border(i.x0,i.y1+2,i.x1,table_border.y2,8)
-                temp_rect = transformPdfToPymupdf(page,i.x0,i.y1,i.x1,table_border.y2)
-                log("border: ",temp_rect)
-                for rect in getRectsInRange(page,border):
-                    string = page.get_textbox(rect)
-                    log("rect:",rect)
-                    if string.strip():
-                        log("string: ",string, "rects:",transformRect(page,rect))
-                        for end in endTable:
-                            if end in string.strip():
-                                log("abort")
-                                break
-                        else:
-                            yield string
-                        break_loop = True
-            else:
-                log("no match")
+
 
 class Entry(object):
     def __init__(self):
@@ -177,13 +180,11 @@ class Tables:
         self.pages.count = self.doc.page_count
     def selectPage(self,nr):
         self.pages.selected = self.doc[nr]
-        if self.pages.selected:
-            self.getTables(self.pages.selected)
-        else:
-            self.pages.selected = self.doc[0]
-            self.getTables(self.pages.selected)
+    def setTableNames(self,names):
+        self.tableNames = names
+        self.getTables(self.pages.selected)
     def getTables(self,page):
-        self.tables = searchForTable(page)
+        self.tables = searchForTable(page,self.tableNames)
     def selectTable(self,nr):
         self.selected_table = self.tables[nr]
     def defRows(self,rowNameList):
@@ -197,11 +198,43 @@ class Tables:
         page = self.pages.selected
         table.border = Border(table.x0,table.y0,1000,table.y1,5)
         for init,rowName in enumerate(table.rowNameList):
-            for index,content in enumerate(searchContentFromRowName(page,rowName,table.border)):
-                if init == 0:
+            if init == 0:
+                table.entries.append(Entry())
+            for index,content in enumerate(self.searchContentFromRowName(page,rowName,table.border)):
+                if(index > len(table.entries)-1):
                     table.entries.append(Entry())
+                log("entry: ",table.entries[index])
                 setattr(table.entries[index],rowName,content)
+
     def getObjectsFromTable(self):
         table = self.selected_table
         for x in table.entries:
             yield x
+
+    def searchContentFromRowName(self,page,rowName,table_border):
+        break_loop = False
+        name = page.search_for(rowName) #returns list of Rect
+        for i in name:
+            if table_border.check(i.x0,i.y0): # is the row inside the border/table?
+                log("----")
+                newrec = pymupdf.Rect(i.x0-PRESEARCH,i.y0,i.x1+PRESEARCH,i.y1)
+                real_name = page.get_textbox(newrec).strip()
+                log(real_name,";",rowName,";",transformRect(page,newrec))
+                if real_name == rowName:
+                    border = Border(i.x0,i.y1+2,i.x1,table_border.y2,8)
+                    temp_rect = transformPdfToPymupdf(page,i.x0,i.y1,i.x1,table_border.y2)
+                    log("border: ",temp_rect)
+                    for rect in getRectsInRange(page,border):
+                        string = page.get_textbox(rect)
+                        log("rect:",rect)
+                        if string.strip():
+                            log("string: ",string, "rects:",transformRect(page,rect))
+                            for end in self.tableNames:
+                                if end in string.strip():
+                                    log("abort")
+                                    break
+                            else:
+                                yield string
+                            break_loop = True
+                else:
+                    log("no match")
