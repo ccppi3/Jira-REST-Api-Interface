@@ -41,8 +41,14 @@ The list is treated as "OR", or table contains any of the following.
 
 This method also parses the previously selected page for the selected Table names.
 
+
+This method returns the list of all found tables. which is a reference to self.tables
 #### selectTable(indexOfTable)
 Needs to be called after the setTableNames, as for why read the reference of given method.  
+#### selectTableByObj(tableObject)
+The same as selectTable but we will take a table as argument,
+
+This was implemented due to simplify coding, and interworking with a list of tables
 
 This will tell the algorythm which table in the index we will parse
 
