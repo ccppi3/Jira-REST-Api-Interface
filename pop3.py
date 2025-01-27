@@ -8,14 +8,29 @@ import os
 import json
 import sqlite3
 
+#Setup envirement
+load_dotenv()
 
+#load data from .env
+mail_name = os.getenv('Name')
+password = os.getenv('Password')
+
+#settings
+outfile = "tmp.pdf"
+host = "pop.mail.ch"
+user = "outlook-bridge.santis@mail.ch"
+port = 995 
+
+#heper functions for logging
 class err(Enum):
     NONE = 0
     ERROR = 1
     DEBUG = 2
     INFO = 3
+    ULTRA = 4
     def __int__(self):
         return self.value
+#set DEBUG level
 DEBUG = err.INFO #1 error 2 debug 3 all
 
 def log(*kwargs,level=err.INFO):
@@ -25,14 +40,20 @@ def log(*kwargs,level=err.INFO):
             string = string + str(arg) + " "
             print("DBG: ",string)
 
-def log_json(s):
-    if int(DEBUG) > 0:
+def log_json(s,level=err.INFO):
+    if int(DEBUG) >= int(level):
         print("----",json.dumps(s,indent=2,default=str),"\n")
+##end log funtions
+
+def writefile(buffer,filename):
+    file = open(filename,"wb")
+    file.write(buffer)
+    file.close()
 
 def getUidsMail(mailbox):
     mailUidl = mailbox.uidl()
     for uid in mailUidl[1]:
-        log("uidl:",uid)
+        log("uidl:",uid,level=err.ULTRA)
     return mailUidl[1]
 
 def getUidsDb(filename="mail.db"):
@@ -48,10 +69,9 @@ def getUidsDb(filename="mail.db"):
 
     uidsMails = cursor.fetchall()
     for uid in uidsMails:
-        log("uidFromDB: ", uid)
+        log("uidFromDB: ", uid,level=err.ULTRA)
 
     connection.close()
-
     return uidsMails
 
 def addUidsDb(uidsList,filename="mail.db"):
@@ -62,7 +82,7 @@ def addUidsDb(uidsList,filename="mail.db"):
     for uid in uidsList:
         cursor.execute("""SELECT EXISTS(SELECT 1 FROM mails WHERE uid = ?)""",(uid,))
         doesExist = cursor.fetchone()
-        log("Return Exist:",doesExist)
+        log("Return Exist:",doesExist,level=err.ULTRA)
         if doesExist[0] == 0:
             log("addUid to db:",uid.decode())
             cursor.execute("""INSERT INTO mails(uid) VALUES(?)""",(uid,))
@@ -72,58 +92,49 @@ def addUidsDb(uidsList,filename="mail.db"):
     connection.close()
     return newAddedList
 
+def setupPOP(host,port,user,password=None):
+    mailbox = poplib.POP3_SSL(host,port)
+    log("Server Welcome:",mailbox.getwelcome(),level=err.INFO)
+
+    capa = mailbox.capa()
+    log("Server capabilities: ", capa,level=err.INFO)
+
+    resp = mailbox.user(user)
+    if not password:
+        password = getpass()
+    else:
+        log("read password from .env")
+
+    resp = mailbox.pass_(password)
+    log("response: ",resp)
+    return mailbox
 
 
 
-load_dotenv()
 
-mail_name = os.getenv('Name')
-
-password = os.getenv('Password')
-
-def writefile(buffer,filename):
-    file = open(filename,"wb")
-    file.write(buffer)
-    file.close()
-
-outfile = "tmp.pdf"
-host = "pop.mail.ch"
-user = "outlook-bridge.santis@mail.ch"
-port = 995 
-
-mailbox = poplib.POP3_SSL(host,port)
-
-log("Server Welcome:",mailbox.getwelcome(),level=err.INFO)
-
-capa = mailbox.capa()
-
-log("Server capabilities: ", capa,level=err.INFO)
-
-resp = mailbox.user(user)
-if not password:
-    password = getpass()
-else:
-    log("read password from .env")
-
-resp = mailbox.pass_(password)
-log("response: ",resp)
+mailbox = setupPOP(host,port,user,password)
 
 maillist = mailbox.list()
-
 log("maillist: ",maillist)
+
+uids = getUidsDb()
+uidsMail = getUidsMail(mailbox)
+newAdded = addUidsDb(uidsMail)
+
+for uid in newAdded:
+    log("newly added uid:",uid)
 
 
 for mail in range(len(maillist[1])): #maillist[0] contains the response, and maillist[1] contains the "octets" / bytestrea etc
     msg_str = ""
-    log("mail: ",mail)
-    msg = mailbox.retr(mail+1) #msg[0] is the response msg[1] is the data in the form of a line list
+    log("mail: ",mail,level=err.ULTRA)
+    msg = mailbox.retr(mail+1) #msg[0] is the response msg[1] is the data in the form of a line list#counting begins at 1 not 0
     for line in range(len(msg[1])):
-
         try:
             msg_str = msg_str + msg[1][line].decode() + "\n"
         except:
-            log("Cant decode as a string, skipping and dumping the msg",err.ERROR)
-            log_json(msg)
+            log("Cant decode as a string, skipping for more INFO change DEBUG level uid=",mailbox.uidl(which=mail+1),level=err.ERROR)
+            log_json(msg,level=err.ULTRA)
 
     headers = Parser(policy=default_policy).parsestr(msg_str,headersonly=False)
 
@@ -136,7 +147,7 @@ for mail in range(len(maillist[1])): #maillist[0] contains the response, and mai
             log(ctype)
             if(ctype == "text/plain"):
                 log("content pt: ",part.get_content())
-        log("Message: ",headers.get_body())
+        log("Message: ",headers.get_body(),level=err.ULTRA)
 
         for att in headers.iter_attachments():
             atype = att.get_content_type()
@@ -145,12 +156,8 @@ for mail in range(len(maillist[1])): #maillist[0] contains the response, and mai
                 pdffile = att.get_content() 
                 writefile(pdffile,outfile)
 
-uids = getUidsDb()
-uidsMail = getUidsMail(mailbox)
-newAdded = addUidsDb(uidsMail)
 
-for uid in newAdded:
-    log("newly added uid:",uid)
+
         #print("------------------\n",msg_str)
     #print("headers:",headers)
     #for key in headers.keys():
