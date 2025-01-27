@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from enum import Enum
 import os
 import json
+import sqlite3
 
 
 class err(Enum):
@@ -27,6 +28,49 @@ def log(*kwargs,level=err.INFO):
 def log_json(s):
     if int(DEBUG) > 0:
         print("----",json.dumps(s,indent=2,default=str),"\n")
+
+def getUidsMail(mailbox):
+    mailUidl = mailbox.uidl()
+    for uid in mailUidl[1]:
+        log("uidl:",uid)
+
+def getUidsDb(filename="mail.db"):
+    connection = sqlite3.connect(filename)
+    cursor = connection.cursor()
+
+    cursor.execute("""CREATE TABLE IF NOT EXISTS mails (
+        date_added TEXT DEFAULT CURRENT_TIMESTAMP,
+        uid INTEGER)""")
+    connection.commit()
+
+    cursor.execute("select * from mails")
+
+    uidsMails = cursor.fetchall()
+    for uid in uidsMails:
+        log("uidFromDB: ", uid)
+
+    connection.close()
+
+    return uidsMails
+
+def addUidsDb(uidsList,filename="mail.db"):
+    connection = sqlite3.connection(filename)
+    cursor = connection.cursor()
+    newAddedList = []
+
+    for uid in uidsList:
+        cursor.execute("""EXIST(SELECT 1 FROM mails WHERE uid = ?""",(uid,))
+        doesExist = cursor.fetchall()
+        if doesExist == 0:
+            cursor.execute("""INSER INTO mails(uid) VALUES(?)""",(uid,))
+            newAddedList.append(uid)
+
+    cursor.commit()
+    connection.close()
+    return newAddedList
+
+
+
 
 load_dotenv()
 
@@ -97,9 +141,11 @@ for mail in range(len(maillist[1])): #maillist[0] contains the response, and mai
             if "application/pdf" in atype:
                 pdffile = att.get_content() 
                 writefile(pdffile,outfile)
+
+uids = getUidsDb()
+
         #print("------------------\n",msg_str)
     #print("headers:",headers)
     #for key in headers.keys():
     #    print("Key: ",key)
-
 

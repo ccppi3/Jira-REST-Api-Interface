@@ -1,6 +1,6 @@
 import pdf
 
-tables = pdf.Tables("test2.pdf")
+tables = pdf.Tables("tmp.pdf")
 tables.selectPage(0)
 tables.setTableNames(["Tabelle 1","NEUEINTRITT","Arbeitsplatzwechsel","NEUEINTRITTE"])
 tables.selectTable(0)
