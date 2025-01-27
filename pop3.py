@@ -39,7 +39,7 @@ def log(*kwargs,level=err.INFO):
         for arg in kwargs:
             string = string + str(arg) + " "
         if int(level) != int(err.NONE):
-            print("DBG: ",string)
+            print("[",(str(level).split(".")[1]).replace(" ",""),"]",string)
         else:
             print("[INFO] ",string)
 
@@ -140,7 +140,7 @@ def parseMail(msgNum,filterFrom):
 
         for att in headers.iter_attachments():
             atype = att.get_content_type()
-            log(atype,level=3)
+            log(atype,level=err.INFO)
             if "application/pdf" in atype:
                 outFilename = att.get_filename()
                 log("out-name(parsed):", outFilename)
@@ -154,29 +154,35 @@ def parseMail(msgNum,filterFrom):
     #for key in headers.keys():
     #    print("Key: ",key)
 
+if __name__=="__main__":
 
-mailbox = setupPOP(host,port,user,password)
+    mailbox = setupPOP(host,port,user,password)
 
-uids = getUidsDb()
-uidsMail = getUidsMail(mailbox)
-newAdded = addUidsDb(uidsMail)
-#overwrite for testing
-#newAdded = uidsMail
-if len(newAdded)==0:
-    log("No new mail, nothing to do",level=err.NONE)
+    uids = getUidsDb()
+    uidsMail = getUidsMail(mailbox)
+    newAdded = addUidsDb(uidsMail)
+    #overwrite for testing
+    #newAdded = uidsMail
+    if len(newAdded)==0:
+        log("No new mail, nothing to do",level=err.NONE)
 
-for uid in newAdded:
-    iUid = uid.decode().split() #convert byte stream into two integers
-    log("type newadded:",type(iUid))
-    log("newly added uid:",iUid)
+    for uid in newAdded:
+        iUid = uid.decode().split() #convert byte stream into two integers
+        log("type newadded:",type(iUid))
+        log("newly added uid:",iUid)
 
-#(response, ['mesgnum uid', ...], octets)
-
-for uid in newAdded:
-    msgNum = uid.decode().split()[0]
-    log("msgNum to parse:",msgNum)
-    newFileList = parseMail(msgNum,filterName)
+    #(response, ['mesgnum uid', ...], octets)
+    
+    newFileList = []
+    for uid in newAdded:
+        msgNum = uid.decode().split()[0]
+        log("msgNum to parse:",msgNum)
+        newFileList = newFileList + parseMail(msgNum,filterName)
     log("NewFileList:",newFileList)
+    
+    log("\033[37;42m",level=err.NONE) #ansi escape sequence to change color
+    log("I checked ",len(uidsMail)," uids, processed ",len(newAdded)," new mails and downloaded ",len(newFileList)," files\033[0m",level=err.NONE);
+    log("\033[0m",level=err.NONE)#ansi reset color
 
 #for mail in range(len(maillist[1])): #maillist[0] contains the response, and maillist[1] contains the "octets" / bytestrea etc
 #    msg_str = ""
