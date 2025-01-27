@@ -33,6 +33,7 @@ def getUidsMail(mailbox):
     mailUidl = mailbox.uidl()
     for uid in mailUidl[1]:
         log("uidl:",uid)
+    return mailUidl[1]
 
 def getUidsDb(filename="mail.db"):
     connection = sqlite3.connect(filename)
@@ -54,18 +55,20 @@ def getUidsDb(filename="mail.db"):
     return uidsMails
 
 def addUidsDb(uidsList,filename="mail.db"):
-    connection = sqlite3.connection(filename)
+    connection = sqlite3.connect(filename)
     cursor = connection.cursor()
     newAddedList = []
 
     for uid in uidsList:
-        cursor.execute("""EXIST(SELECT 1 FROM mails WHERE uid = ?""",(uid,))
-        doesExist = cursor.fetchall()
-        if doesExist == 0:
-            cursor.execute("""INSER INTO mails(uid) VALUES(?)""",(uid,))
+        cursor.execute("""SELECT EXISTS(SELECT 1 FROM mails WHERE uid = ?)""",(uid,))
+        doesExist = cursor.fetchone()
+        log("Return Exist:",doesExist)
+        if doesExist[0] == 0:
+            log("addUid to db:",uid.decode())
+            cursor.execute("""INSERT INTO mails(uid) VALUES(?)""",(uid,))
             newAddedList.append(uid)
 
-    cursor.commit()
+    connection.commit()
     connection.close()
     return newAddedList
 
@@ -143,7 +146,11 @@ for mail in range(len(maillist[1])): #maillist[0] contains the response, and mai
                 writefile(pdffile,outfile)
 
 uids = getUidsDb()
+uidsMail = getUidsMail(mailbox)
+newAdded = addUidsDb(uidsMail)
 
+for uid in newAdded:
+    log("newly added uid:",uid)
         #print("------------------\n",msg_str)
     #print("headers:",headers)
     #for key in headers.keys():
