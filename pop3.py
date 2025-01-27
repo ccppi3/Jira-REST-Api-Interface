@@ -8,17 +8,19 @@ import os
 import json
 import sqlite3
 
+
 #Setup envirement
-load_dotenv()
+if __name__ == "__main__":
+    load_dotenv()
 
-#load data from .env
-filterName = os.getenv('FilterName')
-password = os.getenv('MailPassword')
+    #load data from .env
+    filterName = os.getenv('FilterName')
+    password = os.getenv('MailPassword')
 
-#settings
-host = "pop.mail.ch"
-user = "outlook-bridge.santis@mail.ch"
-port = 995 
+    #settings
+    host = "pop.mail.ch"
+    user = "outlook-bridge.santis@mail.ch"
+    port = 995 
 
 #heper functions for logging
 class err(Enum):
@@ -183,6 +185,9 @@ if __name__=="__main__":
     log("\033[37;42m",level=err.NONE) #ansi escape sequence to change color
     log("I checked ",len(uidsMail)," uids, processed ",len(newAdded)," new mails and downloaded ",len(newFileList)," files\033[0m",level=err.NONE);
     log("\033[0m",level=err.NONE)#ansi reset color
+    
+
+
 
 #for mail in range(len(maillist[1])): #maillist[0] contains the response, and maillist[1] contains the "octets" / bytestrea etc
 #    msg_str = ""
