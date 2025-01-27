@@ -113,7 +113,6 @@ def searchForTable(page,tableNames):
             else:
                 log("no table found, giving up")
 
-
             #search with other algorythm
     #remove double tables where if first point match remove the one witch seems to be a line
     for ai,a in enumerate(tables):
@@ -183,10 +182,13 @@ class Tables:
     def setTableNames(self,names):
         self.tableNames = names
         self.getTables(self.pages.selected)
+        return self.tables
     def getTables(self,page):
         self.tables = searchForTable(page,self.tableNames)
     def selectTable(self,nr):
         self.selected_table = self.tables[nr]
+    def selectTableByObj(self,obj):
+        self.selected_table = obj
     def defRows(self,rowNameList):
         table = self.selected_table
         table.rowNameList = rowNameList
