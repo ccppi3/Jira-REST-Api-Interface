@@ -16,7 +16,6 @@ filterName = os.getenv('FilterName')
 password = os.getenv('MailPassword')
 
 #settings
-outfile = "tmp.pdf"
 host = "pop.mail.ch"
 user = "outlook-bridge.santis@mail.ch"
 port = 995 
@@ -30,6 +29,7 @@ class err(Enum):
     ULTRA = 4
     def __int__(self):
         return self.value
+
 #set DEBUG level
 DEBUG = err.INFO #1 error 2 debug 3 all
 
@@ -38,7 +38,10 @@ def log(*kwargs,level=err.INFO):
         string = ""
         for arg in kwargs:
             string = string + str(arg) + " "
-        print("DBG: ",string)
+        if int(level) != int(err.NONE):
+            print("DBG: ",string)
+        else:
+            print("[INFO] ",string)
 
 def log_json(s,level=err.INFO):
     if int(DEBUG) >= int(level):
@@ -80,12 +83,13 @@ def addUidsDb(uidsList,filename="mail.db"):
     newAddedList = []
 
     for uid in uidsList:
-        cursor.execute("""SELECT EXISTS(SELECT 1 FROM mails WHERE uid = ?)""",(uid,))
+        iUid = uid.decode().split()[1]
+        cursor.execute("""SELECT EXISTS(SELECT 1 FROM mails WHERE uid = ?)""",(iUid,))
         doesExist = cursor.fetchone()
         log("Return Exist:",doesExist,level=err.ULTRA)
         if doesExist[0] == 0:
-            log("addUid to db:",uid.decode())
-            cursor.execute("""INSERT INTO mails(uid) VALUES(?)""",(uid,))
+            log("addUid to db:",iUid)
+            cursor.execute("""INSERT INTO mails(uid) VALUES(?)""",(iUid,))
             newAddedList.append(uid)
 
     connection.commit()
@@ -153,14 +157,13 @@ def parseMail(msgNum,filterFrom):
 
 mailbox = setupPOP(host,port,user,password)
 
-maillist = mailbox.list()
-log("maillist: ",maillist)
-
 uids = getUidsDb()
 uidsMail = getUidsMail(mailbox)
 newAdded = addUidsDb(uidsMail)
 #overwrite for testing
-newAdded = uidsMail
+#newAdded = uidsMail
+if len(newAdded)==0:
+    log("No new mail, nothing to do",level=err.NONE)
 
 for uid in newAdded:
     iUid = uid.decode().split() #convert byte stream into two integers
