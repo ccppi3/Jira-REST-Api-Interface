@@ -7,6 +7,7 @@ from enum import Enum
 import os
 import json
 import sqlite3
+import copy
 
 
 #Setup envirement
@@ -115,7 +116,7 @@ def setupPOP(host,port,user,password=None):
     log("response: ",resp)
     return mailbox
 
-def parseMail(msgNum,filterFrom):
+def parseMail(mailbox,msgNum,filterFrom):
     fileList = []
     msg_str = ""
     msg = mailbox.retr(msgNum)
