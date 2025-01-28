@@ -149,7 +149,7 @@ def searchTableDown(page,table):
                 log("smallest[mypfcoordinate]:",smallesty)
     if rect:
         final_rect = rect
-        final_rect.y1 = biggesty
+        final_rect.y1 = biggesty + 10
         final_rect.y0 = smallesty
         log("table border calculated:",transformRect(page,final_rect))
         return final_rect
@@ -228,11 +228,11 @@ class Tables:
                 log(real_name,";",rowName,";",transformRect(page,newrec))
                 if real_name == rowName:
                     border = Border(i.x0,i.y1+2,i.x1,table_border.y2,8)
-                    temp_rect = transformPdfToPymupdf(page,i.x0,i.y1,i.x1,table_border.y2)
+                    temp_rect = transformPdfToPymupdf(page,i.x0,i.y1+2,i.x1,table_border.y2)
                     log("border: ",temp_rect)
-                    for rect in getRectsInRange(page,border):
+                    for i,rect in enumerate(getRectsInRange(page,border)):
                         string = page.get_textbox(rect)
-                        log("rect:",rect)
+                        log("rect(",i,"):",transformRect(page,rect))
                         if string.strip():
                             log("string: ",string, "rects:",transformRect(page,rect))
                             for end in self.tableNames:

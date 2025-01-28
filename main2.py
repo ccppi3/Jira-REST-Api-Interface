@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 PDFNAMEFILTER = "Arbeitsplatzeint"
 load_dotenv()
 
-pdf.setDebugLevel(False)
+pdf.setDebugLevel(True)
 pop3.setDebugLevel(err.INFO)
 
 #load data from .env
@@ -86,7 +86,7 @@ for file in newFileList:
         listTable = tables.setTableNames(["Tabelle 1","NEUEINTRITT","Arbeitsplatzwechsel","NEUEINTRITTE"])
         for table in listTable:
             tables.selectTableByObj(table)
-            tables.defRows(["Vorname","Name","Kürzel"])
+            tables.defRows(["Vorname","Name","Kürzel","Abteilung","Abteilung vorher","Abteilung neu","Abteilung Neu"])
             tables.parseTable()
 
             for tbl in tables.getObjectsFromTable():
