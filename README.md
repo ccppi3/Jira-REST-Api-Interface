@@ -72,7 +72,7 @@ The returned objects contain each field named after the defined rows (via defRow
 I wrote a little abstraction layer for the mail part of the project.
 ## log / error handling
 
-###class err(Enum)
+### class err(Enum)
 
 This is just an enum for defining the desired verbosity of the debug / log to stdout.
 
