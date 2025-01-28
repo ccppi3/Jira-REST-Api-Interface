@@ -7,7 +7,6 @@ from enum import Enum
 import os
 import json
 import sqlite3
-import copy
 
 
 #Setup envirement

@@ -14,9 +14,9 @@ filterName = os.getenv('FilterName')
 password = os.getenv('MailPassword')
 
 #settings
-host = "pop.mail.ch"
-user = "outlook-bridge.santis@mail.ch"
-port = 995 
+host = os.getenv('Host')
+user = os.getenv('Mail')
+port = os.getenv('Port') 
 
 mailbox = pop3.setupPOP(host,port,user,password)
 
@@ -52,18 +52,21 @@ objList = []
 
 for file in newFileList:
     tables = pdf.Tables(file)
-    tables.selectPage(0)
-    listTable = tables.setTableNames(["Tabelle 1","NEUEINTRITT","Arbeitsplatzwechsel","NEUEINTRITTE"])
-    for table in listTable:
-        tables.selectTableByObj(table)
-        tables.defRows(["Vorname","Name","Kürzel"])
-        tables.parseTable()
+    countPage = tables.countPages()
+    for pageNr in range(countPage):
+        log("Scrap page",pageNr)
+        tables.selectPage(pageNr)
+        listTable = tables.setTableNames(["Tabelle 1","NEUEINTRITT","Arbeitsplatzwechsel","NEUEINTRITTE"])
+        for table in listTable:
+            tables.selectTableByObj(table)
+            tables.defRows(["Vorname","Name","Kürzel"])
+            tables.parseTable()
 
-        for tbl in tables.getObjectsFromTable():
-            objcpy = copy.deepcopy(tbl)
-            objList.append(objcpy)
+            for tbl in tables.getObjectsFromTable():
+                objcpy = copy.deepcopy(tbl)
+                objList.append(objcpy)
 
 for obj in objList:
-    print("ALLDATA: ",obj)
+    print("ALLDATA: \n",obj)
 
 

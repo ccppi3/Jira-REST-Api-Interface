@@ -177,6 +177,7 @@ class Tables:
 
     def countPages(self):
         self.pages.count = self.doc.page_count
+        return self.pages.count
     def selectPage(self,nr):
         self.pages.selected = self.doc[nr]
     def setTableNames(self,names):
