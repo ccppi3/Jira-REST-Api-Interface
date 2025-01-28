@@ -115,7 +115,7 @@ the db is a sqlite3 database.
 
 This takes the list and synchronises with the db, if a new entry is found it will be returned in a list which contains all new uids.
 
-> returns list of nre uifd
+> returns list of new uids
 
 ### setupPOP(host,port,user,password=None)
 
