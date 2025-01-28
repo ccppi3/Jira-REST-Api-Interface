@@ -154,13 +154,7 @@ def parseMail(mailbox,msgNum,filterFrom):
                 fileList.append(outFilename)
     return fileList
 
-        #print("------------------\n",msg_str)
-    #print("headers:",headers)
-    #for key in headers.keys():
-    #    print("Key: ",key)
-
 if __name__=="__main__":
-
     mailbox = setupPOP(host,port,user,password)
 
     uids = getUidsDb()
@@ -175,8 +169,6 @@ if __name__=="__main__":
         iUid = uid.decode().split() #convert byte stream into two integers
         log("type newadded:",type(iUid))
         log("newly added uid:",iUid)
-
-    #(response, ['mesgnum uid', ...], octets)
     
     newFileList = []
     for uid in newAdded:
@@ -188,13 +180,3 @@ if __name__=="__main__":
     log("\033[37;42m",level=err.NONE) #ansi escape sequence to change color
     log("I checked ",len(uidsMail)," uids, processed ",len(newAdded)," new mails and downloaded ",len(newFileList)," files\033[0m",level=err.NONE);
     log("\033[0m",level=err.NONE)#ansi reset color
-    
-
-
-
-#for mail in range(len(maillist[1])): #maillist[0] contains the response, and maillist[1] contains the "octets" / bytestrea etc
-#    msg_str = ""
-#    log("mail: ",mail,level=err.ULTRA)
-#    msg = mailbox.retr(mail+1) #msg[0] is the response msg[1] is the data in the form of a line list#counting begins at 1 not 0
-
-
