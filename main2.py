@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 pdf.setDebugLevel(False)
-pop3.setDebugLevel(err.ERROR)
+pop3.setDebugLevel(err.INFO)
 
 #load data from .env
 filterName = os.getenv('FilterName')
@@ -45,6 +45,19 @@ for uid in newAdded:
     msgNum = uid.decode().split()[0]
     log("msgNum to parse:",msgNum)
     newFileList = newFileList + pop3.parseMail(mailbox,msgNum,filterName)
+
+toBeRemoved = []
+for i,file1 in enumerate(newFileList):
+    for file2 in range(i+1,len(newFileList)):
+        log(file1," -> ",newFileList[file2])
+        if file1 == newFileList[file2]:
+            toBeRemoved.append(file2)
+            log("Drop duble files: ",file1,level=err.ERROR)
+
+log("To be removed: ",toBeRemoved)
+for i in sorted(toBeRemoved,reverse=True): #remove allways highest order first because else the index moves
+    del newFileList[i]
+
 log("NewFileList:",newFileList)
 
 log("\033[37;42m",level=err.NONE) #ansi escape sequence to change color
