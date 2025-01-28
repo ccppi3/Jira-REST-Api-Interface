@@ -28,7 +28,7 @@ uidsMail = pop3.getUidsMail(mailbox)
 newAdded = pop3.addUidsDb(uidsMail)
 
 #overwrite for testing
-newAdded = uidsMail
+#newAdded = uidsMail
 
 if len(newAdded)==0:
     log("No new mail, nothing to do",level=err.NONE)

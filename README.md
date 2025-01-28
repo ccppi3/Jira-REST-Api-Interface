@@ -70,9 +70,70 @@ The returned objects contain each field named after the defined rows (via defRow
 # pop3 / mail library
 
 I wrote a little abstraction layer for the mail part of the project.
+## log / error handling
+
+###class err(Enum)
+
+This is just an enum for defining the desired verbosity of the debug / log to stdout.
+
+possible values are:
+- err.NONE   standard informational output
+- err.ERROR  only show errors
+- err.DEBUG
+- err.INFO
+- err.ULTRA  this is very verbose!
+
+related mehtod see setDebugLevel and log in section Methods
+
 
 ## Methods
 
 ### setDebugLevel(err)
 
-Defines the debug level of the library, the argument is of type class/enum err see reference for possible values.
+Defines the debug level of the library, the argument is of type class/enum err see reference for possible values. For exampe:
+> pop3.setDebugLevel(err.ERROR)
+
+### log(*kwargs,level=error.INFO)
+
+This is used to print / log to stdout which takes into consideration of the previous set log level with setDebugLevel.  
+The keyword argument level sets the assosiated verbosity, and defaults to error.INFO.
+
+### log_json(json_string,level=err.INFO)
+
+Same as log but pretty prints json and similar big data junks.
+
+### getUidsMail(mailbox)
+
+returns a list of uids of all mails on the server
+
+### getUidsDb(filename="mail.db")
+
+returns all uids from the db, db name defaults to mail.db.
+the db is a sqlite3 database.
+
+### addUidsDb(uidsList,filename="mail.db")
+
+This takes the list and synchronises with the db, if a new entry is found it will be returned in a list which contains all new uids.
+
+### setupPOP(host,port,user,password=None)
+
+This makes connection to the server according to the arguments.
+if no password is specified, the shell will prompt to input the password.
+
+This also logs the server capabilities, when the DEBUG level is at least err.INFO.
+
+This also logs in as the specified user
+
+It returns a mailbox from the class poplib.POP3_SSL
+
+### parseMail(mailbox, msgNum,filterFrom)
+
+filters mail with message number msgNum in mailbox which accord to the filterFrom argument in the mail header field 'from'.
+
+This method downloads any pdf from a match.
+
+It returns a list of all downloaded files.
+
+
+
+
