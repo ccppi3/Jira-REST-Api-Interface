@@ -102,21 +102,6 @@ The keyword argument level sets the assosiated verbosity, and defaults to error.
 
 Same as log but pretty prints json and similar big data junks.
 
-### getUidsMail(mailbox)
-
-returns a list of uids of all mails on the server
-
-### getUidsDb(filename="mail.db")
-
-> returns all uids from the db, db name defaults to mail.db.
-the db is a sqlite3 database.
-
-### addUidsDb(uidsList,filename="mail.db")
-
-This takes the list and synchronises with the db, if a new entry is found it will be returned in a list which contains all new uids.
-
-> returns list of new uids
-
 ### setupPOP(host,port,user,password=None)
 
 This makes connection to the server according to the arguments.
@@ -135,6 +120,23 @@ filters mail with message number msgNum in mailbox which accord to the filterFro
 This method downloads any pdf from a match.
 
 > returns a list of all downloaded files.
+
+
+### getUidsMail(mailbox)
+
+returns a list of uids of all mails on the server
+
+### getUidsDb(filename="mail.db")
+
+> returns all uids from the db, db name defaults to mail.db.
+the db is a sqlite3 database.
+
+### addUidsDb(uidsList,filename="mail.db")
+
+This takes the list and synchronises with the db, if a new entry is found it will be returned in a list which contains all new uids.
+
+> returns list of new uids
+
 
 
 
