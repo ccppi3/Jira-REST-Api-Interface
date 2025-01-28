@@ -6,7 +6,7 @@ from pop3 import log,err
 
 from dotenv import load_dotenv
 
-
+PDFNAMEFILTER = "Arbeitsplatzeint"
 load_dotenv()
 
 pdf.setDebugLevel(False)
@@ -28,7 +28,11 @@ uidsMail = pop3.getUidsMail(mailbox)
 newAdded = pop3.addUidsDb(uidsMail)
 
 #overwrite for testing
-#newAdded = uidsMail
+newAdded = uidsMail
+
+def removeIndexesFromList(indexListRemove,_list):
+    for i in sorted(indexListRemove,reverse=True): #remove allways highest order first because else the index moves
+        del _list[i]
 
 if len(newAdded)==0:
     log("No new mail, nothing to do",level=err.NONE)
@@ -55,8 +59,16 @@ for i,file1 in enumerate(newFileList):
             log("Drop duble files: ",file1,level=err.ERROR)
 
 log("To be removed: ",toBeRemoved)
-for i in sorted(toBeRemoved,reverse=True): #remove allways highest order first because else the index moves
-    del newFileList[i]
+removeIndexesFromList(toBeRemoved,newFileList)
+toBeRemoved.clear()
+
+#filter out is a Plausible pdf?
+
+for i,fileName in enumerate(newFileList):
+    if PDFNAMEFILTER not in fileName:
+        toBeRemoved.append(i)
+log("To be removed: ",toBeRemoved)
+removeIndexesFromList(toBeRemoved,newFileList)
 
 log("NewFileList:",newFileList)
 
