@@ -28,7 +28,7 @@ uidsMail = pop3.getUidsMail(mailbox)
 newAdded = pop3.addUidsDb(uidsMail)
 
 #overwrite for testing
-newAdded = uidsMail
+#newAdded = uidsMail
 
 def removeIndexesFromList(indexListRemove,_list):
     for i in sorted(indexListRemove,reverse=True): #remove allways highest order first because else the index moves
@@ -57,12 +57,11 @@ for i,file1 in enumerate(newFileList):
         if file1 == newFileList[file2]:
             toBeRemoved.append(file2)
             log("Drop duble files: ",file1,level=err.ERROR)
-
 log("To be removed: ",toBeRemoved)
 removeIndexesFromList(toBeRemoved,newFileList)
 toBeRemoved.clear()
 
-#filter out is a Plausible pdf?
+#filter out: is a plausible pdf?
 
 for i,fileName in enumerate(newFileList):
     if PDFNAMEFILTER not in fileName:
