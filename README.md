@@ -108,12 +108,14 @@ returns a list of uids of all mails on the server
 
 ### getUidsDb(filename="mail.db")
 
-returns all uids from the db, db name defaults to mail.db.
+> returns all uids from the db, db name defaults to mail.db.
 the db is a sqlite3 database.
 
 ### addUidsDb(uidsList,filename="mail.db")
 
 This takes the list and synchronises with the db, if a new entry is found it will be returned in a list which contains all new uids.
+
+> returns list of nre uifd
 
 ### setupPOP(host,port,user,password=None)
 
@@ -124,7 +126,7 @@ This also logs the server capabilities, when the DEBUG level is at least err.INF
 
 This also logs in as the specified user
 
-It returns a mailbox from the class poplib.POP3_SSL
+> returns a mailbox from the class poplib.POP3_SSL
 
 ### parseMail(mailbox, msgNum,filterFrom)
 
@@ -132,7 +134,7 @@ filters mail with message number msgNum in mailbox which accord to the filterFro
 
 This method downloads any pdf from a match.
 
-It returns a list of all downloaded files.
+> returns a list of all downloaded files.
 
 
 
