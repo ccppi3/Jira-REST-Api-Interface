@@ -66,3 +66,13 @@ This returns a list of objects witch are stored in the current selected and alre
 
 
 The returned objects contain each field named after the defined rows (via defRows) if they are empty they will contain the python keyword None.
+
+# pop3 / mail library
+
+I wrote a little abstraction layer for the mail part of the project.
+
+## Methods
+
+### setDebugLevel(err)
+
+Defines the debug level of the library, the argument is of type class/enum err see reference for possible values.
