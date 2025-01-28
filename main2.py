@@ -9,6 +9,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+pdf.setDebugLevel(False)
+pop3.setDebugLevel(err.ERROR)
+
 #load data from .env
 filterName = os.getenv('FilterName')
 password = os.getenv('MailPassword')
@@ -54,7 +57,7 @@ for file in newFileList:
     tables = pdf.Tables(file)
     countPage = tables.countPages()
     for pageNr in range(countPage):
-        log("Scrap page",pageNr)
+        log("Parse page ",pageNr," of file ",file,level=err.NONE)
         tables.selectPage(pageNr)
         listTable = tables.setTableNames(["Tabelle 1","NEUEINTRITT","Arbeitsplatzwechsel","NEUEINTRITTE"])
         for table in listTable:

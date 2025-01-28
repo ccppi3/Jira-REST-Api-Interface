@@ -12,11 +12,14 @@ import itertools
 DEBUG = True
 PRESEARCH = 5 #The search funtion finds all ocurenses of a string we work arround this issue, bc we need exact matches with a look back of 5 point and reading at this position
 def log(*s):
-    if DEBUG:
+    if DEBUG == True:
         print(s)
 def log_json(s):
-    if DEBUG:
+    if DEBUG == True:
         print("----",json.dumps(s,indent=2,default=str),"\n")
+def setDebugLevel(level):
+    global DEBUG 
+    DEBUG = level
 
 def get_all_keys(data, curr_key=[]):
     #if "text" in curr_key:
@@ -161,7 +164,7 @@ class Entry(object):
     def __str__(self):
         string = ""
         for va in vars(self):
-            string += va + " : " + str(vars(self)[va]) + "\n"
+            string += va + " : " + str(vars(self)[va]) + " "
         return string 
 
 class Tables:

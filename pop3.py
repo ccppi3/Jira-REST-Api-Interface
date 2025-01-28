@@ -35,6 +35,9 @@ class err(Enum):
 #set DEBUG level
 DEBUG = err.INFO #1 error 2 debug 3 all
 
+def setDebugLevel(level):
+    global DEBUG
+    DEBUG = level
 def log(*kwargs,level=err.INFO):
     if int(DEBUG) >= int(level):
         string = ""
