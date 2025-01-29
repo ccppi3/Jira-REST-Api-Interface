@@ -131,7 +131,7 @@ def getTextInRange(page,border):
             if border.check(rectBbox.x0,rectBbox.y0):
                 log("text:",text)
                 log("rect:",rectBbox)
-                yield rectBbox
+                yield text,rectBbox
             
 
     #log_json(text_parsed)
@@ -283,11 +283,13 @@ class Tables:
                 real_name = page.get_textbox(newrec).strip()
                 log(real_name,";",rowName,";",transformRect(page,newrec))
                 if real_name == rowName:
-                    border = Border(recName.x0-4,recName.y1+2,recName.x1+1,table_border.y2,8)
+                    border = Border(recName.x0-4,recName.y1+2,recName.x1+1,table_border.y2,3)
                     temp_rect = transformPdfToPymupdf(page,recName.x0-4,recName.y1+2,recName.x1,table_border.y2)
                     log("border: ",temp_rect)
-                    for i,rect in enumerate(getRectsInRange(page,border)):
-                        string = page.get_textbox(rect)
+                    #for i,rect in enumerate(getRectsInRange(page,border)):
+                    #    string = page.get_textbox(rect)
+                    for i,[text,rect] in enumerate(getTextInRange(page,border)):
+                        string = text
                         log("rect(",i,"):",transformRect(page,rect))
                         if string.strip():
                             log("string: ",string, "rects:",transformRect(page,rect))

@@ -114,8 +114,8 @@ for table in listTablesDbg:
     else:
         log("no rects found in tablesDbg")
 
-    for text in pdf.getTextInRange(page,border):
-        log("text tablesDbg:",pdf.transformRect(page,text))
+    for [text,rect] in pdf.getTextInRange(page,border):
+        log("text tablesDbg:",pdf.transformRect(page,rect))
     else:
         log("no text found in tablesDbg")
 
