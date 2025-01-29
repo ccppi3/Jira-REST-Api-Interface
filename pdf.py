@@ -8,18 +8,52 @@
 import pymupdf
 import json
 import itertools
+from enum import Enum
 
-DEBUG = True
 PRESEARCH = 5 #The search funtion finds all ocurenses of a string we work arround this issue, bc we need exact matches with a look back of 5 point and reading at this position
-def log(*s):
-    if DEBUG == True:
-        print(s)
+LOGFILTER = ""
+
 def log_json(s):
-    if DEBUG == True:
+    if int(DEBUG) > int(err.NONE):
         print("----",json.dumps(s,indent=2,default=str),"\n")
-def setDebugLevel(level):
-    global DEBUG 
+        file = open("debug-json.json","a")
+        for x in s:
+            file.write(json.dumps(s,indent=2,default=str))
+        file.close()
+
+class err(Enum):
+    NONE = 0
+    ERROR = 1
+    DEBUG = 2
+    INFO = 3
+    ULTRA = 4
+    def __int__(self):
+        return self.value
+
+#set DEBUG level
+DEBUG = err.INFO #1 error 2 debug 3 all
+
+def setDebugLevel(level,_filter=""):
+    global DEBUG
     DEBUG = level
+    global LOGFILTER
+    LOGFILTER = _filter
+    print("set pdf Debug level to:",DEBUG)
+
+def log(*kwargs,level=err.INFO):
+    if int(DEBUG) >= int(level):
+        string = ""
+        for arg in kwargs:
+            string = string + str(arg) + " "
+        if LOGFILTER in string:
+            log.hold = 10
+        if LOGFILTER in string or log.hold > 0:
+            log.hold = log.hold - 1
+            if int(level) != int(err.NONE):
+                print("[",(str(level).split(".")[1]).replace(" ",""),"]",string)
+            else:
+                print("[INFO] ",string)
+log.hold = 0
 
 def get_all_keys(data, curr_key=[]):
     #if "text" in curr_key:
@@ -35,6 +69,7 @@ def get_all_keys(data, curr_key=[]):
                     yield from get_all_keys(index,curr_key + [key])
             else:
                 yield '.'.join(curr_key + [key])
+
 def key_dump(data,needle):
     log("type of data:",type(data))
     keys = [*get_all_keys(data)]
@@ -74,13 +109,33 @@ def transformRect(page,rect):
 
 def getRectsInRange(page,border):
     data_drawings = page.get_drawings()
-
+    #log_json(data_drawings)
     for strocke in data_drawings:
         if strocke["items"][0][0]=="re":
             rec = strocke["items"]
             rect = rec[0][1]
             if border.check(rect.x0,rect.y0):
                 yield rect
+
+
+def getTextInRange(page,border):
+    data_text = page.get_text("json",sort=True)
+
+    text_parsed = json.loads(data_text)
+    
+    for block in text_parsed["blocks"]:
+        for line in block["lines"]:
+            text = line["spans"][0]["text"]
+            origin = line["spans"][0]["origin"]
+            rectBbox = pymupdf.Rect(origin[0],origin[1],0,0)
+            if border.check(rectBbox.x0,rectBbox.y0):
+                log("text:",text)
+                log("rect:",rectBbox)
+                yield rectBbox
+            
+
+    #log_json(text_parsed)
+
 
 def getEndOfTables(page,fieldName):
     rectEnd = page.search_for(fieldName)
@@ -183,6 +238,7 @@ class Tables:
         return self.pages.count
     def selectPage(self,nr):
         self.pages.selected = self.doc[nr]
+        return self.pages.selected
     def setTableNames(self,names):
         self.tableNames = names
         self.getTables(self.pages.selected)
@@ -209,7 +265,7 @@ class Tables:
             for index,content in enumerate(self.searchContentFromRowName(page,rowName,table.border)):
                 if(index > len(table.entries)-1):
                     table.entries.append(Entry())
-                log("entry: ",table.entries[index])
+                log("entry: ",table.entries[index],"_")
                 setattr(table.entries[index],rowName,content)
 
     def getObjectsFromTable(self):
@@ -219,16 +275,16 @@ class Tables:
 
     def searchContentFromRowName(self,page,rowName,table_border):
         break_loop = False
-        name = page.search_for(rowName) #returns list of Rect
-        for i in name:
-            if table_border.check(i.x0,i.y0): # is the row inside the border/table?
-                log("----")
-                newrec = pymupdf.Rect(i.x0-PRESEARCH,i.y0,i.x1+PRESEARCH,i.y1)
+        names = page.search_for(rowName) #returns list of Rect
+        for recName in names:
+            if table_border.check(recName.x0,recName.y0): # is the row inside the border/table?
+                log("----border check of recName succeeded--")
+                newrec = pymupdf.Rect(recName.x0-PRESEARCH,recName.y0,recName.x1+PRESEARCH,recName.y1)
                 real_name = page.get_textbox(newrec).strip()
                 log(real_name,";",rowName,";",transformRect(page,newrec))
                 if real_name == rowName:
-                    border = Border(i.x0,i.y1+2,i.x1,table_border.y2,8)
-                    temp_rect = transformPdfToPymupdf(page,i.x0,i.y1+2,i.x1,table_border.y2)
+                    border = Border(recName.x0-4,recName.y1+2,recName.x1+1,table_border.y2,8)
+                    temp_rect = transformPdfToPymupdf(page,recName.x0-4,recName.y1+2,recName.x1,table_border.y2)
                     log("border: ",temp_rect)
                     for i,rect in enumerate(getRectsInRange(page,border)):
                         string = page.get_textbox(rect)
@@ -244,3 +300,5 @@ class Tables:
                             break_loop = True
                 else:
                     log("no match")
+            else:
+                log("rec(rowName) not inside table border")

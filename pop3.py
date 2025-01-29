@@ -50,7 +50,7 @@ def log(*kwargs,level=err.INFO):
 
 def log_json(s,level=err.INFO):
     if int(DEBUG) >= int(level):
-        print("----",json.dumps(s,indent=2,default=str),"\n")
+        print("----",json.dumps(s,indent=2,default=str))
 ##end log funtions
 
 def writefile(buffer,filename):

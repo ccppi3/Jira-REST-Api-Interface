@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 PDFNAMEFILTER = "Arbeitsplatzeint"
 load_dotenv()
 
-pdf.setDebugLevel(True)
+pdf.setDebugLevel(err.INFO,_filter="Abteilung vorher")
 pop3.setDebugLevel(err.INFO)
 
 #load data from .env
@@ -26,9 +26,6 @@ mailbox = pop3.setupPOP(host,port,user,password)
 uids = pop3.getUidsDb()
 uidsMail = pop3.getUidsMail(mailbox)
 newAdded = pop3.addUidsDb(uidsMail)
-
-#overwrite for testing
-#newAdded = uidsMail
 
 def removeIndexesFromList(indexListRemove,_list):
     for i in sorted(indexListRemove,reverse=True): #remove allways highest order first because else the index moves
@@ -96,4 +93,31 @@ for file in newFileList:
 for obj in objList:
     print("ALLDATA: \n",obj)
 
+tablesDbg = pdf.Tables('Arbeitsplatzeinteilung KW 04 20.01.2025.pdf')
+log("Debug special pdf")
+page = tablesDbg.selectPage(0)
 
+objDbgList = []
+listTablesDbg = tablesDbg.setTableNames(["Arbeitsplatzwechsel"])
+for table in listTablesDbg:
+    tablesDbg.selectTableByObj(table)
+    tablesDbg.defRows(["Vorname","Name","Kürzel","Abteilung","Abteilung vorher","Abteilung neu","Abteilung Neu"])
+    tablesDbg.parseTable()
+
+    for tbl in tablesDbg.getObjectsFromTable():
+        objcpy2 = copy.deepcopy(tbl)
+        objDbgList.append(objcpy2)
+    
+    border = pdf.Border(209,1190-723,270,1190-600,50)
+    for rect in pdf.getRectsInRange(page,border):
+        log("rects tablesDbg:",pdf.transformRect(page,rect))
+    else:
+        log("no rects found in tablesDbg")
+
+    for text in pdf.getTextInRange(page,border):
+        log("text tablesDbg:",pdf.transformRect(page,text))
+    else:
+        log("no text found in tablesDbg")
+
+for obj in objDbgList:
+    log("dbg_data: \n",obj)
