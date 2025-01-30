@@ -93,15 +93,15 @@ for file in newFileList:
 for obj in objList:
     print("ALLDATA: \n",obj)
 
-tablesDbg = pdf.Tables('Arbeitsplatzeinteilung KW 05 27.01.2025.pdf')
+tablesDbg = pdf.Tables('test4.pdf')
 log("Debug special pdf")
-page = tablesDbg.selectPage(0)
+page = tablesDbg.selectPage(1)
 
 objDbgList = []
-listTablesDbg = tablesDbg.setTableNames(["Arbeitsplatzwechsel","NEUEINTRITT"])
+listTablesDbg = tablesDbg.setTableNames(["Arbeitsplatzwechsel","NEUEINTRITT","NEUEINTRITTE"])
 for table in listTablesDbg:
     tablesDbg.selectTableByObj(table)
-    tablesDbg.defRows(["Vorname","Name","Kürzel","Abteilung","Abteilung vorher","Abteilung neu","Abteilung Neu"])
+    tablesDbg.defRows(["Vorname","Name","Kürzel","Abteilung","Abteilung vorher","Abteilung neu","Abteilung Neu","Platz-Nr."])
     tablesDbg.parseTable()
 
     for tbl in tablesDbg.getObjectsFromTable():
