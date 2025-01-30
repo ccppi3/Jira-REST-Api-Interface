@@ -12,6 +12,7 @@ from enum import Enum
 
 PRESEARCH = 5 #The search funtion finds all ocurenses of a string we work arround this issue, bc we need exact matches with a look back of 5 point and reading at this position
 LOGFILTER = ""
+TBLLINE = 3 #sets the width ab when is considered a rect to be a line
 
 def log_json(s):
     if int(DEBUG) > int(err.NONE):
@@ -29,7 +30,8 @@ class err(Enum):
     ULTRA = 4
     def __int__(self):
         return self.value
-
+class Line(pymupdf.Rect):
+    pass
 #set DEBUG level
 DEBUG = err.INFO #1 error 2 debug 3 all
 
@@ -124,17 +126,50 @@ def getTextInRange(page,border):
     text_parsed = json.loads(data_text)
     
     for block in text_parsed["blocks"]:
-        for line in block["lines"]:
-            text = line["spans"][0]["text"]
-            origin = line["spans"][0]["origin"]
-            rectBbox = pymupdf.Rect(origin[0],origin[1],0,0)
-            if border.check(rectBbox.x0,rectBbox.y0):
-                log("text:",text)
-                log("rect:",rectBbox)
-                yield text,rectBbox
+        if "lines" in block.keys():
+            for line in block["lines"]:
+                text = line["spans"][0]["text"]
+                origin = line["spans"][0]["origin"]
+                rectBbox = pymupdf.Rect(origin[0],origin[1],0,0)
+                if border.check(rectBbox.x0,rectBbox.y0):
+                    log("text:",text)
+                    log("rect:",rectBbox)
+                    yield text,rectBbox
+        else:
+            log("no lines key found")
             
 
     #log_json(text_parsed)
+
+
+def checkBorderDown(page,rectOrigin):#returns the nearest line downwoards to a given rect
+    data_drawings = page.get_drawings()
+    for strocke in data_drawings:
+        if strocke["items"][0][0]=="re":
+            rec = strocke["items"]
+            rect = rec[0][1]
+            if rect.y1 -rect.y0 < TBLLINE: #is line?
+                if rect.y0 > rectOrigin.y1:
+                    if rect.x0 <= rectOrigin.x0 and rect.x1 >= rectOrigin.x1:
+                        return rect
+        elif strocke["items"][0][0]=="l":
+            lin = strocke["items"]
+            line = Line(lin[0][1],lin[0][2])
+                
+            #get more left point
+            if line.x0 < line.x1:
+                leftXPoint = line.x0
+                rightXPoint = line.x1
+            else:
+                leftXPoint = line.x1
+                rightXPoint = line.x0
+            if leftXPoint <= rectOrigin.x0 and rightXPoint >= rectOrigin.x1:
+                if line.y1 > rectOrigin.y1 and line.y0 > rectOrigin.y1:
+                    log("table line:",line)
+
+        else:
+            log("other item types:",strocke["items"][0][0])
+    return False
 
 
 def getEndOfTables(page,fieldName):
@@ -283,7 +318,14 @@ class Tables:
                 real_name = page.get_textbox(newrec).strip()
                 log(real_name,";",rowName,";",transformRect(page,newrec))
                 if real_name == rowName:
-                    border = Border(recName.x0-4,recName.y1+2,recName.x1+1,table_border.y2,3)
+                    posTableLine = checkBorderDown(page,recName)
+                    log(rowName,"posTableLine:",posTableLine)
+                    if posTableLine != False:
+                        border = Border(recName.x0-4,posTableLine.y1+2,recName.x1+1,table_border.y2,3)
+                    else:
+                        border = Border(recName.x0-4,recName.y1+2,recName.x1+1,table_border.y2,3)
+
+
                     temp_rect = transformPdfToPymupdf(page,recName.x0-4,recName.y1+2,recName.x1,table_border.y2)
                     log("border: ",temp_rect)
                     #for i,rect in enumerate(getRectsInRange(page,border)):

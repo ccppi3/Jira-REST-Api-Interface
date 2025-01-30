@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 PDFNAMEFILTER = "Arbeitsplatzeint"
 load_dotenv()
 
-pdf.setDebugLevel(err.INFO,_filter="Abteilung vorher")
+pdf.setDebugLevel(err.INFO,_filter="")
 pop3.setDebugLevel(err.INFO)
 
 #load data from .env
