@@ -144,6 +144,7 @@ def getTextInRange(page,border):
 
 def checkBorderDown(page,rectOrigin):#returns the nearest line downwoards to a given rect
     data_drawings = page.get_drawings()
+    nearestRect = pymupdf.Rect()
     for strocke in data_drawings:
         if strocke["items"][0][0]=="re":
             rec = strocke["items"]
@@ -151,7 +152,12 @@ def checkBorderDown(page,rectOrigin):#returns the nearest line downwoards to a g
             if rect.y1 -rect.y0 < TBLLINE: #is line?
                 if rect.y0 > rectOrigin.y1:
                     if rect.x0 <= rectOrigin.x0 and rect.x1 >= rectOrigin.x1:
-                        return rect
+                        if not nearestRect:
+                            nearestRect = rect
+                        else:
+                            if rect.y0 < nearestRect.y0:
+                                nearestRect = rect
+
         elif strocke["items"][0][0]=="l":
             lin = strocke["items"]
             line = Line(lin[0][1],lin[0][2])
@@ -169,7 +175,7 @@ def checkBorderDown(page,rectOrigin):#returns the nearest line downwoards to a g
 
         else:
             log("other item types:",strocke["items"][0][0])
-    return False
+    return nearestRect
 
 
 def getEndOfTables(page,fieldName):
@@ -319,7 +325,7 @@ class Tables:
                 log(real_name,";",rowName,";",transformRect(page,newrec))
                 if real_name == rowName:
                     posTableLine = checkBorderDown(page,recName)
-                    log(rowName,"posTableLine:",posTableLine)
+                    log(rowName,"posTableLine:",transformRect(page,posTableLine))
                     if posTableLine != False:
                         border = Border(recName.x0-4,posTableLine.y1+2,recName.x1+1,table_border.y2,3)
                     else:
