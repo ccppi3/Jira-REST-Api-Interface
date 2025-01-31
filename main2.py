@@ -93,15 +93,15 @@ for file in newFileList:
 for obj in objList:
     print("ALLDATA: \n",obj)
 
-tablesDbg = pdf.Tables('test4.pdf')
+tablesDbg = pdf.Tables('tests/BPN-SAS2-846EL.pdf')
 log("Debug special pdf")
-page = tablesDbg.selectPage(1)
+page = tablesDbg.selectPage(12)
 
 objDbgList = []
-listTablesDbg = tablesDbg.setTableNames(["Arbeitsplatzwechsel","NEUEINTRITT","NEUEINTRITTE"])
+listTablesDbg = tablesDbg.setTableNames(["General Jumper Settings"])
 for table in listTablesDbg:
     tablesDbg.selectTableByObj(table)
-    tablesDbg.defRows(["Vorname","Name","Kürzel","Abteilung","Abteilung vorher","Abteilung neu","Abteilung Neu","Platz-Nr."])
+    tablesDbg.defRows(["Jumper","Jumper Settings","Note"])
     tablesDbg.parseTable()
 
     for tbl in tablesDbg.getObjectsFromTable():

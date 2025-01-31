@@ -109,16 +109,22 @@ def transformPdfToPymupdf(page,x,y,w,h):
 def transformRect(page,rect):
     return rect * ~page.transformation_matrix
 
-def getRectsInRange(page,border):
+def getRectsInRange(page,border,_type="re"):
     data_drawings = page.get_drawings()
     #log_json(data_drawings)
     for strocke in data_drawings:
-        if strocke["items"][0][0]=="re":
-            rec = strocke["items"]
-            rect = rec[0][1]
-            if border.check(rect.x0,rect.y0):
-                yield rect
-
+        if _type == "re":
+            if strocke["items"][0][0]=="re":
+                rec = strocke["items"]
+                rect = rec[0][1]
+                if border.check(rect.x0,rect.y0):
+                    yield rect
+        elif _type == "l":
+            if strocke["items"][0][0]=="l":
+                rawLine = strocke["items"]
+                line = Line(rawLine[0][1],rawLine[0][2])
+                if border.check(line.x0,line.y0):
+                    yield line
 
 def getTextInRange(page,border):
     data_text = page.get_text("json",sort=True)
@@ -192,6 +198,7 @@ def getEndOfTables(page,fieldName):
 
 def searchForTable(page,tableNames):
     tables = []
+    rec = None
     for i in tableNames:
       for a in page.search_for(i):
           tables.append(a)
@@ -200,13 +207,13 @@ def searchForTable(page,tableNames):
     log("len table:",len(tables))
     for i,table in enumerate(tables):
         rec =  searchTableEnd(page,table) 
-        if rec:
+        if rec != None and rec != False:
             table.y0 = rec.y0
             table.y1 = rec.y1
         else:
             log("No table end found use algo2")
             rec = searchTableDown(page,table)
-            if rec:
+            if rec != None and rec != False:
                 table.y0 = rec.y0
                 table.y1 = rec.y1
             else:
@@ -222,17 +229,22 @@ def searchForTable(page,tableNames):
     return tables
 
 def searchTableEnd(page,table): #search the table border by moving to the left
-    border = Border(table.x0-10,table.y0-10,table.x0+10,table.y0+10,3)
-    for rect in getRectsInRange(page,border):
+    line = lineLeftOfHeading(page,table)
+    border = Border(line.x0-10,table.y0-10,table.x0+10,table.y0+10,3)
+    for rect in getRectsInRange(page,border,_type="l"):
         if abs(rect.x1 - rect.x0) < 3 and abs(rect.y0 - rect.y1) > 20: #is it a line? and filter out very short lines
             log("Potential border of table:",transformRect(page,rect))
             return rect
     return False
+
 def searchTableDown(page,table):
     biggesty = 0
     smallesty = None
-    border = Border(table.x0-10,table.y0-10,table.x0+10,table.y0+50,3)
-    for rect in getRectsInRange(page,border):
+    rect = None
+    line = lineLeftOfHeading(page,table)
+
+    border = Border(line.x0-10,table.y0-10,line.x1+10,table.y0+50,3)
+    for rect in getRectsInRange(page,border,"l"):
         if abs(rect.x1 - rect.x0) < 3: #and abs(rect.y0 - rect.y1) > 20: #is it a line? do not filter short lines
             log("Potential border of table:",transformRect(page,rect))
             if(rect.y1 > biggesty):
@@ -243,7 +255,7 @@ def searchTableDown(page,table):
             if(rect.y0 < smallesty):
                 smallesty = rect.y0
                 log("smallest[mypfcoordinate]:",smallesty)
-    if rect:
+    if rect != None and rect != False:
         final_rect = rect
         final_rect.y1 = biggesty + 10
         final_rect.y0 = smallesty
@@ -251,8 +263,28 @@ def searchTableDown(page,table):
         return final_rect
     return False
 
-
-
+def lineLeftOfHeading(page,rectHeading):
+    drawings = page.get_drawings()
+    nearestLine = Line()
+    for drawing in drawings:
+        if drawing["items"][0][0]=="l":
+            rawDrawing = drawing["items"]
+            line = Line(rawDrawing[0][1],rawDrawing[0][2])
+            if abs(line.x0 - line.x1) < TBLLINE: #more or less straght line?
+                if line.y0 < line.y1: #rearange points to be in order
+                    topYPoint = line.y0
+                    bottomtYPoint = line.y1
+                else:
+                    topYPoint = line.y1
+                    bottomYPoint = line.y0
+                if topYPoint <= rectHeading.y1 and bottomYPoint >= rectHeading.y0:
+                    if line.x1 < rectHeading.x0:
+                        if not nearestLine:
+                            nearestLine = line
+                        else:
+                            if line.x0 > nearestLine:
+                                nearestLine = line
+    return nearestLine
 
 class Entry(object):
     def __init__(self):
@@ -330,7 +362,6 @@ class Tables:
                         border = Border(recName.x0-4,posTableLine.y1+2,recName.x1+1,table_border.y2,3)
                     else:
                         border = Border(recName.x0-4,recName.y1+2,recName.x1+1,table_border.y2,3)
-
 
                     temp_rect = transformPdfToPymupdf(page,recName.x0-4,recName.y1+2,recName.x1,table_border.y2)
                     log("border: ",temp_rect)
