@@ -9,8 +9,8 @@ from dotenv import load_dotenv
 PDFNAMEFILTER = "Arbeitsplatzeint"
 load_dotenv()
 
-pdf.setDebugLevel(err.INFO,_filter="")
-pop3.setDebugLevel(err.INFO)
+pdf.setDebugLevel(err.ULTRA,_filter="")
+pop3.setDebugLevel(err.ULTRA)
 
 #load data from .env
 filterName = os.getenv('FilterName')
@@ -47,6 +47,7 @@ for uid in newAdded:
     log("msgNum to parse:",msgNum)
     newFileList = newFileList + pop3.parseMail(mailbox,msgNum,filterName)
 
+log("done parsing, doing some filtering")
 toBeRemoved = []
 for i,file1 in enumerate(newFileList):
     for file2 in range(i+1,len(newFileList)):
@@ -95,7 +96,7 @@ for obj in objList:
 
 tablesDbg = pdf.Tables('test4.pdf')
 log("Debug special pdf")
-page = tablesDbg.selectPage(1)
+page = tablesDbg.selectPage(0)
 
 objDbgList = []
 listTablesDbg = tablesDbg.setTableNames(["Arbeitsplatzwechsel","NEUEINTRITT","NEUEINTRITTE"])
@@ -120,4 +121,4 @@ for table in listTablesDbg:
         log("no text found in tablesDbg")
 log("found obj:",len(objDbgList))
 for obj in objDbgList:
-    log("dbg_data: \n",obj)
+    log("dbg_data: \n",obj,err.INFO)
