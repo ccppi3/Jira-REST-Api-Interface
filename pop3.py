@@ -121,11 +121,10 @@ def setupPOP(host,port,user,password=None):
 def parseMail(mailbox,msgNum,filterFrom):
     fileList = []
     msg_str = ""
-    log("retrieving...",level=err.ULTRA)
     msg = mailbox.retr(msgNum)
     log("done retrieving, msg:",msg[0].decode().split(),level=err.ULTRA)
     if int(msg[0].decode().split()[1]) > 500000:
-        log("very long message skipping...")
+        log("very long message skipping...",level=err.ERROR)
         return fileList
     for line in range(len(msg[1])):
 
