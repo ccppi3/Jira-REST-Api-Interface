@@ -9,6 +9,7 @@ import pymupdf
 import json
 import itertools
 from enum import Enum
+from itertools import zip_longest
 
 PRESEARCH = 5 #The search funtion finds all ocurenses of a string we work arround this issue, bc we need exact matches with a look back of 5 point and reading at this position
 LOGFILTER = ""
@@ -303,7 +304,9 @@ class Tables:
         for init,rowName in enumerate(table.rowNameList):
             if init == 0:
                 table.entries.append(Entry())
-            for index,content in enumerate(self.searchContentFromRowName(page,rowName,table.border)):
+            _list = self.searchContentFromRowName(page,rowName,table.border)
+
+            for index,content in enumerate(_list):
                 if(index > len(table.entries)-1):
                     table.entries.append(Entry())
                 log("entry: ",table.entries[index],"_")
@@ -316,6 +319,9 @@ class Tables:
 
     def searchContentFromRowName(self,page,rowName,table_border):
         break_loop = False
+        listA = []          #list from algo A
+        listB = []          #list from algo B
+        listC = []          #combined list
         names = page.search_for(rowName) #returns list of Rect
         for recName in names:
             if table_border.check(recName.x0,recName.y0): # is the row inside the border/table?
@@ -333,9 +339,14 @@ class Tables:
 
 
                     temp_rect = transformPdfToPymupdf(page,recName.x0-4,recName.y1+2,recName.x1,table_border.y2)
-                    log("border: ",temp_rect)
-                    #for i,rect in enumerate(getRectsInRange(page,border)):
-                    #    string = page.get_textbox(rect)
+                    log("Name border: ",temp_rect)
+                    for i,rect in enumerate(getRectsInRange(page,border)):
+                        string = page.get_textbox(rect)
+                        if string.strip():
+                            log("getRectsInRange:",string.strip())
+                            listA.append(string.strip())
+                        
+
                     for i,[text,rect] in enumerate(getTextInRange(page,border)):
                         string = text
                         log("rect(",i,"):",transformRect(page,rect))
@@ -346,9 +357,27 @@ class Tables:
                                     log("abort")
                                     break
                             else:
-                                yield string
-                            break_loop = True
+                                listB.append(string.strip())
+                               # yield string
+                    for a,b in zip_longest(listA,listB,fillvalue=None):
+                        if a == b and a != None and a != '' and a != ' ':
+                            listC.append(a)
+                        elif a != b:
+                            if a == None:
+                                listC.append(b)
+                            elif b == None:
+                                listC.append(a)
+                            else:
+                                log("algos give different results!")
+                                combined = a + " / " + b
+                                listC.append(combined)
+                    log(listA,level=err.ULTRA)
+                    log(listB,level=err.ULTRA)
+                    log(listC,level=err.ULTRA)
+
+                    return listC
                 else:
                     log("no match")
             else:
                 log("rec(rowName) not inside table border")
+        return []
