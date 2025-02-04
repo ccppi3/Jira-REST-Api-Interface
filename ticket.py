@@ -50,14 +50,14 @@ class Ticket:
             for objct in self.data:
                 if getattr(objct, "Abteilung vorher") == objct:
                     self.label = ["Arbeitsplatzwechsel"]
-                    self.summary = self.company + " Arbeitplatzwechsel " + self.file_name[29:-4]
+                    self.summary = self.company + " Arbeitplatzwechsel " + self.file_name.split()[3]
                     print(self.summary)
-                    self.description += objct.Kürzel + " " + " " + objct.Vorname + " "
+                    self.description += objct.Kürzel + " " + objct.Name + " " + objct.Vorname + " "
                     self.description += getattr(objct, "Abteilung vorher") + " ➡️ " + getattr(objct, "Abteilung neu") + "\n"
 
                 else:
                     self.label = ["Neueintritt"]
-                    self.summary = self.company + " Neueintritte " + self.file_name[29:-4]
+                    self.summary = self.company + " Neueintritte " + self.file_name.split()[3]
                     if self.company == "SANTIS":
                         self.description += objct.Kürzel + " " + objct.Name + " " + objct.Vorname + " " + getattr(objct, "Platz-Nr") + "\n"
                     else:
@@ -83,8 +83,10 @@ class Ticket:
         self.format_data()
         payload = self.create_payload()
         # Create ticket
+        print("SUMMARY: ", self.summary)
         response = requests.post(self.url, data=payload, headers=self.headers, auth=self.auth)
         # Get ticket id
+        print(response)
         print(response.text)
         self.id = response.json()["id"]
         # Attach PDF to ticket
