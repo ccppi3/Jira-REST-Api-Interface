@@ -122,7 +122,12 @@ def parseMail(mailbox,msgNum,filterFrom):
     fileList = []
     msg_str = ""
     msg = mailbox.retr(msgNum)
+    log("done retrieving, msg:",msg[0].decode().split(),level=err.ULTRA)
+    if int(msg[0].decode().split()[1]) > 1000000:
+        log("very long message skipping...",level=err.ERROR)
+        return fileList
     for line in range(len(msg[1])):
+
         try:
             msg_str = msg_str + msg[1][line].decode() + "\n"
         except:
@@ -130,8 +135,10 @@ def parseMail(mailbox,msgNum,filterFrom):
             log_json(msg,level=err.ULTRA)
             return fileList
 
+    log("run parser.parsestr...")
     headers = Parser(policy=default_policy).parsestr(msg_str,headersonly=False)
-
+    log("done parsing\nlength of msgstr: ",len(msg_str))
+    log("headers:",headers['from'])
     if filterFrom in headers['from']:
         log("From:",headers['from'])
         log("Content type:",headers['Content-Type'])
@@ -139,11 +146,13 @@ def parseMail(mailbox,msgNum,filterFrom):
         for part in headers.walk():
             ctype = part.get_content_type()
             log(ctype)
+            log("ctype:",ctype,level=err.ULTRA)
             if(ctype == "text/plain"):
                 log("content pt: ",part.get_content())
         log("Message: ",headers.get_body(),level=err.ULTRA)
 
         for att in headers.iter_attachments():
+            log("att",att,level=err.ULTRA)
             atype = att.get_content_type()
             log(atype,level=err.INFO)
             if "application/pdf" in atype:
@@ -152,6 +161,8 @@ def parseMail(mailbox,msgNum,filterFrom):
                 pdffile = att.get_content() 
                 writefile(pdffile,outFilename)
                 fileList.append(outFilename)
+    else:
+        log("not matching any filter")
     return fileList
 
 if __name__=="__main__":
