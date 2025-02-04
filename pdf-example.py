@@ -5,7 +5,7 @@ tables.selectPage(0)
 listTable = tables.setTableNames(["Tabelle 1","NEUEINTRITT","Arbeitsplatzwechsel","NEUEINTRITTE"])
 for table in listTable:
     tables.selectTableByObj(table)
-    tables.defRows(["b","Name","A"])
+    tables.defRows(["b","Name","Abteilung"])
     tables.parseTable()
 
 

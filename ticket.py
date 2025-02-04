@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 import json
 import pdf
 from pop3 import err as err
+import copy
 
 # load .env file
 load_dotenv()
@@ -47,21 +48,26 @@ class Ticket:
 
     # Format data in a way to use the payload template easily
     def format_data(self):
-            for objct in self.data:
-                if getattr(objct, "Abteilung vorher") == objct:
-                    self.label = ["Arbeitsplatzwechsel"]
-                    self.summary = self.company + " Arbeitplatzwechsel " + self.file_name.split()[3]
-                    print(self.summary)
-                    self.description += objct.Kürzel + " " + objct.Name + " " + objct.Vorname + " "
-                    self.description += getattr(objct, "Abteilung vorher") + " ➡️ " + getattr(objct, "Abteilung neu") + "\n"
+        for obj in self.data:
+            print("count obj:",obj)
+            print(dir(obj))
 
+        for objct in self.data:
+            if "Abteilung vorher" in  dir(objct):
+                self.label = ["Arbeitsplatzwechsel"]
+                string = self.file_name.split()[3].split(".pdf")[0]
+                self.summary = self.company + " Arbeitplatzwechsel " +  string
+                print(self.summary)
+                self.description += objct.Kürzel + " " + objct.Name + " " + objct.Vorname + " "
+                self.description += getattr(objct, "Abteilung vorher") + " ➡️ " + getattr(objct, "Abteilung neu") + "\n"
+
+            else:
+                self.label = ["Neueintritt"]
+                self.summary = self.company + " Neueintritte " + self.file_name.split()[3]
+                if self.company == "SANTIS":
+                    self.description += objct.Kürzel + " " + objct.Name + " " + objct.Vorname + " " + getattr(objct, "Platz-Nr") + "\n"
                 else:
-                    self.label = ["Neueintritt"]
-                    self.summary = self.company + " Neueintritte " + self.file_name.split()[3]
-                    if self.company == "SANTIS":
-                        self.description += objct.Kürzel + " " + objct.Name + " " + objct.Vorname + " " + getattr(objct, "Platz-Nr") + "\n"
-                    else:
-                        self.description += objct.Kürzel + objct.Name + objct.Vorname + objct.Abteilung
+                    self.description += objct.Kürzel + objct.Name + objct.Vorname + objct.Abteilung
 
     # Create the Payload from a Template and input data
     def create_payload(self):
@@ -84,7 +90,7 @@ class Ticket:
         payload = self.create_payload()
         # Create ticket
         print("SUMMARY: ", self.summary)
-        response = requests.post(self.url, data=payload, headers=self.headers, auth=self.auth)
+        #response = requests.post(self.url, data=payload, headers=self.headers, auth=self.auth)
         # Get ticket id
         print(response)
         print(response.text)
@@ -112,16 +118,20 @@ tables = pdf.Tables("Arbeitsplatzeinteilung KW 04 20.01.2025.pdf")
 pdf.setDebugLevel(err.ERROR)
 tables.selectPage(0)
 listTable = tables.setTableNames(["Tabelle 1", "Arbeitsplatzwechsel", "NEUEINTRITT","NEUEINTRITTE"])
+
+objlist = []
 for table in listTable:
     tables.selectTableByObj(table)
-    tables.defRows(["Vorname","Name","Kürzel","Abteilung vorher","Abteilung neu","Platz-Nr"])
+    tables.defRows(["Vorname","Name","Kürzel","Abteilung vorher","Abteilung neu","Platz-Nr","Abteilung"])
     tables.parseTable()
 
     obj_list = tables.getObjectsFromTable()
     for obj in obj_list:
+        objcpy = copy.deepcopy(obj)
+        objlist.append(objcpy)
         print(obj)
         print(obj_list)
 
 
-ticket = Ticket(obj_list, "Arbeitsplatzeinteilung KW 04 20.01.2025.pdf", "ALLPOWER")
+ticket = Ticket(objlist, "Arbeitsplatzeinteilung KW 04 20.01.2025.pdf", "ALLPOWER")
 ticket.create_ticket()
