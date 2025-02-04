@@ -123,7 +123,7 @@ def parseMail(mailbox,msgNum,filterFrom):
     msg_str = ""
     msg = mailbox.retr(msgNum)
     log("done retrieving, msg:",msg[0].decode().split(),level=err.ULTRA)
-    if int(msg[0].decode().split()[1]) > 500000:
+    if int(msg[0].decode().split()[1]) > 1000000:
         log("very long message skipping...",level=err.ERROR)
         return fileList
     for line in range(len(msg[1])):
@@ -136,7 +136,7 @@ def parseMail(mailbox,msgNum,filterFrom):
             return fileList
 
     log("run parser.parsestr...")
-    headers = Parser(policy=default_policy).parsestr(msg_str,headersonly=True)
+    headers = Parser(policy=default_policy).parsestr(msg_str,headersonly=False)
     log("done parsing\nlength of msgstr: ",len(msg_str))
     log("headers:",headers['from'])
     if filterFrom in headers['from']:
@@ -152,7 +152,7 @@ def parseMail(mailbox,msgNum,filterFrom):
         log("Message: ",headers.get_body(),level=err.ULTRA)
 
         for att in headers.iter_attachments():
-            log("att",att,level=ULTRA)
+            log("att",att,level=err.ULTRA)
             atype = att.get_content_type()
             log(atype,level=err.INFO)
             if "application/pdf" in atype:
