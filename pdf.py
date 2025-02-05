@@ -263,7 +263,7 @@ class Tbl:
         self.name = name
         self.rowNameList = []
     def getName(self):
-        return name
+        return self.name
 
 
 class Entry(object):
