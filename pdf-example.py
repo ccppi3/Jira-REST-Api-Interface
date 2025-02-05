@@ -9,7 +9,7 @@ for table in listTable:
     tables.parseTable()
 
 
-    print("table 1")
+    print("table name:",table.name)
     for i in tables.getObjectsFromTable():
         print(i)
 

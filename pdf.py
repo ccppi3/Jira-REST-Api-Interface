@@ -20,7 +20,8 @@ def log_json(s):
         print("----",json.dumps(s,indent=2,default=str),"\n")
         file = open("debug-json.json","a")
         for x in s:
-            file.write(json.dumps(s,indent=2,default=str))
+            pass
+            #file.write(json.dumps(s,indent=2,default=str))
         file.close()
 
 class err(Enum):
@@ -193,23 +194,23 @@ def getEndOfTables(page,fieldName):
 
 def searchForTable(page,tableNames):
     tables = []
-    for i in tableNames:
-      for a in page.search_for(i):
-          tables.append(a)
+    for name in tableNames:
+      for rec in page.search_for(name):
+          tables.append(Tbl(rec,name))
     for x in tables:
-        log("tables at: ",transformRect(page,x))
+        log("tables at: ",transformRect(page,x.rec))
     log("len table:",len(tables))
     for i,table in enumerate(tables):
         rec =  searchTableEnd(page,table) 
         if rec:
-            table.y0 = rec.y0
-            table.y1 = rec.y1
+            table.rec.y0 = rec.y0
+            table.rec.y1 = rec.y1
         else:
             log("No table end found use algo2")
             rec = searchTableDown(page,table)
             if rec:
-                table.y0 = rec.y0
-                table.y1 = rec.y1
+                table.rec.y0 = rec.y0
+                table.rec.y1 = rec.y1
             else:
                 log("no table found, giving up")
 
@@ -217,22 +218,26 @@ def searchForTable(page,tableNames):
     #remove double tables where if first point match remove the one witch seems to be a line
     for ai,a in enumerate(tables):
         for i in range(ai+1,len(tables)):
-            if abs(a.x0 - tables[i].x0) < 1 and abs(a.y0 - tables[i].y0) < 1:
+            if abs(a.rec.x0 - tables[i].rec.x0) < 1 and abs(a.rec.y0 - tables[i].rec.y0) < 1:
                 log("pop table:", tables[i], "in favor of: ",a)
                 tables.pop(i)
     return tables
 
-def searchTableEnd(page,table): #search the table border by moving to the left
+def searchTableEnd(page,table_full): #search the table border by moving to the left
+    table = table_full.rec
     border = Border(table.x0-10,table.y0-10,table.x0+10,table.y0+10,3)
     for rect in getRectsInRange(page,border):
         if abs(rect.x1 - rect.x0) < 3 and abs(rect.y0 - rect.y1) > 20: #is it a line? and filter out very short lines
             log("Potential border of table:",transformRect(page,rect))
             return rect
     return False
-def searchTableDown(page,table):
+
+def searchTableDown(page,table_full):
     biggesty = 0
     smallesty = None
-    border = Border(table.x0-10,table.y0-10,table.x0+10,table.y0+50,3)
+    t1 = 10
+    table = table_full.rec
+    border = Border(table.x0-t1,table.y0-t1,table.x0+t1,table.y0+t1*5,3)
     for rect in getRectsInRange(page,border):
         if abs(rect.x1 - rect.x0) < 3: #and abs(rect.y0 - rect.y1) > 20: #is it a line? do not filter short lines
             log("Potential border of table:",transformRect(page,rect))
@@ -252,7 +257,13 @@ def searchTableDown(page,table):
         return final_rect
     return False
 
-
+class Tbl:
+    def __init__(self,rec,name):
+        self.rec = rec
+        self.name = name
+        self.rowNameList = []
+    def getName(self):
+        return name
 
 
 class Entry(object):
@@ -300,8 +311,8 @@ class Tables:
         table.entries = []
         table.state = self.State()
         page = self.pages.selected
-        table.border = Border(table.x0,table.y0,1000,table.y1,5)
-        for init,rowName in enumerate(table.rowNameList):
+        table.border = Border(table.rec.x0,table.rec.y0,1000,table.rec.y1,5)
+        for init,rowName in enumerate(self.selected_table.rowNameList):
             if init == 0:
                 table.entries.append(Entry())
             _list = self.searchContentFromRowName(page,rowName,table.border)
@@ -325,7 +336,7 @@ class Tables:
         names = page.search_for(rowName) #returns list of Rect
         for recName in names:
             if table_border.check(recName.x0,recName.y0): # is the row inside the border/table?
-                log("----border check of recName succeeded--")
+                log("----border check of succeeded--")
                 newrec = pymupdf.Rect(recName.x0-PRESEARCH,recName.y0,recName.x1+PRESEARCH,recName.y1)
                 real_name = page.get_textbox(newrec).strip()
                 log(real_name,";",rowName,";",transformRect(page,newrec))
@@ -337,7 +348,6 @@ class Tables:
                     else:
                         border = Border(recName.x0-4,recName.y1+2,recName.x1+1,table_border.y2,3)
 
-
                     temp_rect = transformPdfToPymupdf(page,recName.x0-4,recName.y1+2,recName.x1,table_border.y2)
                     log("Name border: ",temp_rect)
                     for i,rect in enumerate(getRectsInRange(page,border)):
@@ -345,7 +355,6 @@ class Tables:
                         if string.strip():
                             log("getRectsInRange:",string.strip())
                             listA.append(string.strip())
-                        
 
                     for i,[text,rect] in enumerate(getTextInRange(page,border)):
                         string = text
@@ -358,7 +367,7 @@ class Tables:
                                     break
                             else:
                                 listB.append(string.strip())
-                               # yield string
+
                     for a,b in zip_longest(listA,listB,fillvalue=None):
                         if a == b and a != None and a != '' and a != ' ':
                             listC.append(a)
@@ -379,5 +388,6 @@ class Tables:
                 else:
                     log("no match")
             else:
-                log("rec(rowName) not inside table border")
+                log("rec(",rowName,") not inside table border")
+                log("table_border:",transformPdfToPymupdf(page,table_border.x,table_border.y,table_border.x2,table_border.y2))
         return []
