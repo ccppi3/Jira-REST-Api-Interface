@@ -12,7 +12,7 @@ import copy
 
 # load .env file
 load_dotenv()
-
+DONOTSENND = True
 
 
 class Ticket:
@@ -90,7 +90,12 @@ class Ticket:
         payload = self.create_payload()
         # Create ticket
         print("SUMMARY: ", self.summary)
-        #response = requests.post(self.url, data=payload, headers=self.headers, auth=self.auth)
+        if DONOTSEND == False:
+            print("sending...")
+            response = requests.post(self.url, data=payload, headers=self.headers, auth=self.auth)
+        else:
+            print("not sending, to not spam Jira while in production")
+
         # Get ticket id
         print(response)
         print(response.text)
@@ -112,26 +117,26 @@ class Ticket:
 
 
 
+if __name__=="__main__":
+
+    tables = pdf.Tables("Arbeitsplatzeinteilung KW 04 20.01.2025.pdf")
+    pdf.setDebugLevel(err.ERROR)
+    tables.selectPage(0)
+    listTable = tables.setTableNames(["Tabelle 1", "Arbeitsplatzwechsel", "NEUEINTRITT","NEUEINTRITTE"])
+
+    objlist = []
+    for table in listTable:
+        tables.selectTableByObj(table)
+        tables.defRows(["Vorname","Name","Kürzel","Abteilung vorher","Abteilung neu","Platz-Nr","Abteilung"])
+        tables.parseTable()
+
+        obj_list = tables.getObjectsFromTable()
+        for obj in obj_list:
+            objcpy = copy.deepcopy(obj)
+            objlist.append(objcpy)
+            print(obj)
+            print(obj_list)
 
 
-tables = pdf.Tables("Arbeitsplatzeinteilung KW 04 20.01.2025.pdf")
-pdf.setDebugLevel(err.ERROR)
-tables.selectPage(0)
-listTable = tables.setTableNames(["Tabelle 1", "Arbeitsplatzwechsel", "NEUEINTRITT","NEUEINTRITTE"])
-
-objlist = []
-for table in listTable:
-    tables.selectTableByObj(table)
-    tables.defRows(["Vorname","Name","Kürzel","Abteilung vorher","Abteilung neu","Platz-Nr","Abteilung"])
-    tables.parseTable()
-
-    obj_list = tables.getObjectsFromTable()
-    for obj in obj_list:
-        objcpy = copy.deepcopy(obj)
-        objlist.append(objcpy)
-        print(obj)
-        print(obj_list)
-
-
-ticket = Ticket(objlist, "Arbeitsplatzeinteilung KW 04 20.01.2025.pdf", "ALLPOWER")
-ticket.create_ticket()
+    ticket = Ticket(objlist, "Arbeitsplatzeinteilung KW 04 20.01.2025.pdf", "ALLPOWER")
+    ticket.create_ticket()
