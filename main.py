@@ -2,10 +2,24 @@ import pop3
 import pdf
 import os
 import copy
+import com
 from pop3 import log,err
 
 from dotenv import load_dotenv
 
+
+def removeIndexesFromList(indexListRemove,_list):
+    for i in sorted(indexListRemove,reverse=True): #remove allways highest order first because else the index moves
+        try:
+            del _list[i]
+        except:
+            log("indexListRemove:",indexListRemove,"\nlist:",_list," len:",len(_list),"\ni:",i)
+            input()
+class TableData:
+    def __init__(self,name,data):
+        self.name = name
+        self.data = data
+        
 PDFNAMEFILTER = "Arbeitsplatzeint"
 load_dotenv()
 
@@ -21,35 +35,44 @@ host = os.getenv('Host')
 user = os.getenv('Mail')
 port = os.getenv('Port') 
 
-mailbox = pop3.setupPOP(host,port,user,password)
+#mailbox = pop3.setupPOP(host,port,user,password)
 
-uids = pop3.getUidsDb()
-uidsMail = pop3.getUidsMail(mailbox)
-newAdded = pop3.addUidsDb(uidsMail)
+#uids = pop3.getUidsDb()
+#uidsMail = pop3.getUidsMail(mailbox)
+#newAdded = pop3.addUidsDb(uidsMail)
 
-def removeIndexesFromList(indexListRemove,_list):
-    for i in sorted(indexListRemove,reverse=True): #remove allways highest order first because else the index moves
-        del _list[i]
+newAdded = []
+uidsMail = []
+log("parsing uids...")
+uids = com.getEntryIDDb()
+uidsMail = com.getEntryIDMail(filterName)
+if uidsMail:
+    newAdded = com.addEntryIDDb(uidsMail)
+
+
 
 if len(newAdded)==0:
     log("No new mail, nothing to do",level=err.NONE)
 
+log("newadded")
 for uid in newAdded:
-    iUid = uid.decode().split() #convert byte stream into two integers
-    log("type newadded:",type(iUid))
-    log("newly added uid:",iUid)
+    log("uid:",uid)
+    #iUid = uid.decode().split() #convert byte stream into two integers
+    log("type newadded:",type(uid))
+    log("newly added uid:",uid)
 
 #(response, ['mesgnum uid', ...], octets)
 
 newFileList = []
 for uid in newAdded:
-    msgNum = uid.decode().split()[0]
-    log("msgNum to parse:",msgNum)
-    newFileList = newFileList + pop3.parseMail(mailbox,msgNum,filterName)
+    #msgNum = uid.decode().split()[0]
+    log("new uid to parse:",uid)
+    #newFileList = newFileList + pop3.parseMail(mailbox,msgNum,filterName)
+    newFileList = newFileList + list(com.downloadAttachements(uid))
 
 log("done parsing, doing some filtering")
 toBeRemoved = []
-for i,file1 in enumerate(newFileList):
+for i,file1 in enumerate(range(0,len(newFileList)-1)):
     for file2 in range(i+1,len(newFileList)):
         log(file1," -> ",newFileList[file2])
         if file1 == newFileList[file2]:
@@ -70,10 +93,12 @@ removeIndexesFromList(toBeRemoved,newFileList)
 log("NewFileList:",newFileList)
 
 log("\033[37;42m",level=err.NONE) #ansi escape sequence to change color
-log("I checked ",len(uidsMail)," uids, processed ",len(newAdded)," new mails and downloaded ",len(newFileList)," files\033[0m",level=err.NONE);
+log("I checked ",len(list(uidsMail))," uids, processed ",len(newAdded)," new mails and downloaded ",len(newFileList)," files\033[0m",level=err.NONE);
 log("\033[0m",level=err.NONE)#ansi reset color
 
-objList = []
+
+
+tableDataList = []
 
 for file in newFileList:
     tables = pdf.Tables(file)
@@ -82,16 +107,23 @@ for file in newFileList:
         log("Parse page ",pageNr," of file ",file,level=err.NONE)
         tables.selectPage(pageNr)
         listTable = tables.setTableNames(["Tabelle 1","NEUEINTRITT","Arbeitsplatzwechsel","NEUEINTRITTE"])
-        for table in listTable:
+        for i,table in enumerate(listTable):
             tables.selectTableByObj(table)
             tables.defRows(["Vorname","Name","Kürzel","Abteilung","Abteilung vorher","Abteilung neu","Abteilung Neu"])
             tables.parseTable()
 
+            print("table:",table.getName())
+            
+            objList = []
             for tbl in tables.getObjectsFromTable():
-                objcpy = copy.deepcopy(tbl)
+                objcpy = copy.deepcopy(tbl) # make a real copy of the data, else the data would be overwritten by the next page, as the data would be parsed as reference
                 objList.append(objcpy)
+            tableDataList.append(TableData(table.name,objList))
 
-for obj in objList:
-    print("ALLDATA: \n",obj)
+for table in tableDataList:
+    print("--------¦",table.name,"¦-------------")
+    for entry in table.data:
+        print("Entry:",entry)
+    print("-------------------------------------\n")
 
 
