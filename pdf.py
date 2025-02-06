@@ -192,11 +192,11 @@ def getEndOfTables(page,fieldName):
     log("endy:",endy)
     return endy
 
-def searchForTable(page,tableNames):
+def searchForTable(page,tableNames,pageNr,fileName):
     tables = []
     for name in tableNames:
       for rec in page.search_for(name):
-          tables.append(Tbl(rec,name))
+          tables.append(Tbl(rec,name,fileName,pageNr))
     for x in tables:
         log("tables at: ",transformRect(page,x.rec))
     log("len table:",len(tables))
@@ -258,9 +258,11 @@ def searchTableDown(page,table_full):
     return False
 
 class Tbl:
-    def __init__(self,rec,name):
+    def __init__(self,rec,name,fileName,pageNumber):
         self.rec = rec
         self.name = name
+        self.fileName = fileName
+        self.pageNumber = pageNumber
         self.rowNameList = []
     def getName(self):
         return self.name
@@ -283,6 +285,7 @@ class Tables:
             self.count = 0
     def __init__(self,filename):
         self.doc = pymupdf.open(filename)
+        self.fileName = filename
         self.pages = self.Page()
         self.countPages()
 
@@ -291,13 +294,14 @@ class Tables:
         return self.pages.count
     def selectPage(self,nr):
         self.pages.selected = self.doc[nr]
+        self.nr = nr
         return self.pages.selected
     def setTableNames(self,names):
         self.tableNames = names
         self.getTables(self.pages.selected)
         return self.tables
     def getTables(self,page):
-        self.tables = searchForTable(page,self.tableNames)
+        self.tables = searchForTable(page,self.tableNames,self.nr,self.fileName)
     def selectTable(self,nr):
         self.selected_table = self.tables[nr]
     def selectTableByObj(self,obj):

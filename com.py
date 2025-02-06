@@ -14,7 +14,15 @@ INBOXNR = 6
 load_dotenv()
 
 filterName = os.getenv("FilterName")
-
+class Entry:
+    def __init__(self,uid,path,creationDate):
+        self.uid = uid
+        self.path = path
+        self.creationDate = creationDate
+    def __eq__(self,other):
+        return self.path == other
+    def __str__(self):
+        return str(self.path) + " " + str(self.creationDate)
 
 def getEntryIDDb(filename="mail.db"):
     connection = sqlite3.connect(filename)
@@ -98,10 +106,22 @@ def downloadAllAttachements(fileEnding,filterName,path=PATH,inboxnr=INBOXNR):
                         att.SaveAsFile(path)
                         print("download to:",PATH)
 
+def getAttachements(entryID,fileEnding="pdf",path=PATH,inboxnr=INBOXNR):
+    outlook = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+    inbox = outlook.GetDefaultFolder(inboxnr)
+
+    messages = inbox.Items
+    for m in messages:
+        if m.EntryID == entryID:
+            print("From:",m.Sender,"Title:",m, "EntryID:",m.EntryID)
+            for att in m.Attachments:
+                if getFileName(att) == fileEnding:
+                    path = path + str(att)
+                    yield Entry(m.EntryID,path,m.CreationTime)
+
 def downloadAttachements(entryID,fileEnding="pdf",path=PATH,inboxnr=INBOXNR):
     outlook = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
     inbox = outlook.GetDefaultFolder(inboxnr)
-    print("Folder:",inbox.Name)
 
     messages = inbox.Items
     for m in messages:
@@ -113,5 +133,3 @@ def downloadAttachements(entryID,fileEnding="pdf",path=PATH,inboxnr=INBOXNR):
                     path = path + str(att)
                     att.SaveAsFile(path)
                     print("download to:",path)
-                    yield path
-
