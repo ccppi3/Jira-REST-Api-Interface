@@ -1,39 +1,29 @@
 {
     "fields": {
         "assignee": {
-        "id": ""
+            "id": ""
         },
         "description": {
-        "content": [
-            {
-            "content": [
-                {
-                "text": "",
-                "type": "text"
-                }
-            ],
-            "type": "paragraph"
-            }
-        ],
-        "type": "doc",
-        "version": 1
+            "type": "doc",
+            "version": 1,
+            "content": []
         },
         "issuetype": {
-        "id": ""
+            "id": ""
         },
         "labels": [
-        ""
+            ""
         ],
         "priority": {
-        "id": ""
+            "id": ""
         },
         "project": {
-        "key": "LZBICT"
+            "key": "LZBICT"
         },
         "reporter": {
-        "id": "712020:7e6e9100-8b72-4b45-b94c-b62ba6dfd56f"
+            "id": "712020:7e6e9100-8b72-4b45-b94c-b62ba6dfd56f"
         },
         "summary": ""
     },
-"update": {}
+    "update": {}
 }
