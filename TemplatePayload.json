@@ -1,29 +1,28 @@
 {
     "fields": {
-        "assignee": {
-            "id": ""
-        },
         "description": {
-            "type": "doc",
-            "version": 1,
-            "content": []
+        "content": [
+
+        ],
+        "type": "doc",
+        "version": 1
         },
         "issuetype": {
-            "id": ""
+        "id": "10002"
         },
         "labels": [
-            ""
+        ""
         ],
         "priority": {
-            "id": ""
+        "id": "3"
         },
         "project": {
-            "key": "LZBICT"
+        "key": "LZBICT"
         },
         "reporter": {
-            "id": "712020:7e6e9100-8b72-4b45-b94c-b62ba6dfd56f"
+        "id": "712020:7e6e9100-8b72-4b45-b94c-b62ba6dfd56f"
         },
-        "summary": ""
+        "summary": "TEST TICKET"
     },
-    "update": {}
+"update": {}
 }

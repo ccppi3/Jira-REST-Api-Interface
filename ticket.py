@@ -10,27 +10,40 @@ import pdf
 from pop3 import err as err
 import copy
 
+
 # load .env file
 load_dotenv()
-DONOTSEND = True
+DONOTSEND = False
+
+class TableData:
+    def __init__(self,name,data,fileName,pageNumber,creationDate):
+        self.name = name
+        self.data = data
+        self.fileName = fileName
+        self.pageNumber = pageNumber
+        self.creationDate = creationDate
 
 
 class Ticket:
-    def __init__(self, data, file_name, company):
+    def __init__(self, data, file_name, company, ticketType):
         # Api info
         self.url = "https://santis.atlassian.net/rest/api/3/issue"
         self.email = "joel.bonini@santismail.ch"
         self.token = os.getenv("TOKEN")
         # Auth
         self.auth = HTTPBasicAuth(self.email, self.token)
-        # General Info
+        # Variavble declarations
+        self.ticketType = ticketType.lower()
         self.data = data
         self.file_name = file_name
         self.description = ""
-        self.label = []
-        self.summary = ""
+        self.label = ["Neueintritt"]
+        self.summary = "Testing API"
         self.id = ""
+        self.table = ""
         self.company = company
+        self.tableHeaders = []
+        self.tableRows = []
 
         # Check if input is empty
         if not self.data:
@@ -43,46 +56,64 @@ class Ticket:
             # Expected request format
             "Accept": "application/json",
             # Response format
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            # Header for file attachements
+            "X-Atlassian-Token": "no-check"
         }
+
 
     # Format data in a way to use the payload template easily
     def format_data(self):
-        for obj in self.data:
-            print("count obj:",obj)
-            print(dir(obj))
+        self.tableRows = []
 
-        for objct in self.data:
-            if "Abteilung vorher" in  dir(objct):
-                self.label = ["Arbeitsplatzwechsel"]
-                string = self.file_name.split()[3].split(".pdf")[0]
-                self.summary = self.company + " Arbeitplatzwechsel " +  string
-                print(self.summary)
-                self.description += objct.Kürzel + " " + objct.Name + " " + objct.Vorname + " "
-                self.description += getattr(objct, "Abteilung vorher") + " ➡️ " + getattr(objct, "Abteilung neu") + "\n"
+        match self.ticketType:
+            case "arbeitsplatzwechsel":
+                self.tableHeaders = ["Kürzel", "Name", "Vorname", "Abteilung Vorher", "Abteilung Neu"]
+                for objct in self.data:
+                    self.tableRows.append([objct.Kürzel, objct.Name, objct.Vorname, getattr(objct, "Abteilung vorher", ""), getattr(objct, "Abteilung neu", "")])
+            case "neueintritt":
+                self.tableHeaders = ["Kürzel", "Name", "Vorname", "Abteilung / Platz-Nr."]
+                for objct in self.data:
+                    self.tableRows.append([objct.Kürzel, objct.Name, objct.Vorname, objct.Abteilung])
+            case "neueintritte":
+                self.tableHeaders = ["Kürzel", "Name", "Vorname", "Abteilung", "Platz-Nr."]
+                for objct in self.data:
+                    self.tableRows.append([objct.Kürzel, objct.Name, objct.Vorname, objct.Abteilung, getattr(objct, "Platz-Nr.", "")])
 
-            else:
-                self.label = ["Neueintritt"]
-                self.summary = self.company + " Neueintritte " + self.file_name.split()[3]
-                if self.company == "SANTIS":
-                    self.description += objct.Kürzel + " " + objct.Name + " " + objct.Vorname + " " + getattr(objct, "Platz-Nr") + "\n"
-                else:
-                    self.description += objct.Kürzel + objct.Name + objct.Vorname + objct.Abteilung
+        self.table = {
+            "type": "table",
+            "content": [
+                           {
+                               "type": "tableRow",
+                               "content": [{"type": "tableHeader", "content": [{"type": "text", "text": col}]} for col
+                                           in self.tableHeaders]
+                           }
+                       ] + [
+                           {
+                               "type": "tableRow",
+                               "content": [{"type": "tableCell", "content": [{"type": "text", "text": str(cell)}]} for
+                                           cell in row]
+                           }
+                           for row in self.tableRows
+                       ]
+        }
+
 
     # Create the Payload from a Template and input data
     def create_payload(self):
         with open("TemplatePayload.json", "r") as file:
             template_data = json.load(file)
             payload = template_data
-            payload["fields"]["assignee"]["id"] = None
-            payload["fields"]["description"]["content"][0]["content"][0]["text"] = self.description
-            payload["fields"]["issuetype"]["id"] = 10002
-            payload["fields"]["labels"] = self.label
-            payload["fields"]["priority"]["id"] = "3"
-            payload["fields"]["summary"] = self.summary
+            payload["fields"]["description"]["content"].append(self.table)
+
+            payload["fields"]["labels"] = self.label if self.label else []
+
 
         payload = json.dumps(payload)
+        print(payload)
         return payload
+
+
 
     # Send payload to Jira Api --> Ticket creation
     def create_ticket(self):
@@ -93,13 +124,11 @@ class Ticket:
         if DONOTSEND == False:
             print("sending...")
             response = requests.post(self.url, data=payload, headers=self.headers, auth=self.auth)
-            print(response)
+            print(response.status_code)
             print(response.text)
             self.id = response.json()["id"]
         else:
             print("not sending, to not spam Jira while not in production")
-
-        # Get ticket id
 
         # Attach PDF to ticket
         if DONOTSEND == False:
@@ -125,20 +154,22 @@ if __name__=="__main__":
     pdf.setDebugLevel(err.ERROR)
     tables.selectPage(0)
     listTable = tables.setTableNames(["Tabelle 1", "Arbeitsplatzwechsel", "NEUEINTRITT","NEUEINTRITTE"])
+    tableDataList = []
 
-    objlist = []
     for table in listTable:
         tables.selectTableByObj(table)
         tables.defRows(["Vorname","Name","Kürzel","Abteilung vorher","Abteilung neu","Platz-Nr","Abteilung"])
         tables.parseTable()
-
+        objList = []
         obj_list = tables.getObjectsFromTable()
         for obj in obj_list:
             objcpy = copy.deepcopy(obj)
-            objlist.append(objcpy)
-            print(obj)
-            print(obj_list)
+            objList.append(objcpy)
+
+        tableDataList.append(TableData(table.name, objList, table.fileName, table.pageNumber, "04-03-2020"))
+        print(table.name)
 
 
-    ticket = Ticket(objlist, "Arbeitsplatzeinteilung KW 04 20.01.2025.pdf", "ALLPOWER")
+
+    ticket = Ticket(objList, "Arbeitsplatzeinteilung KW 04 20.01.2025.pdf", "ALLPOWER", "Neueintritt")
     ticket.create_ticket()
