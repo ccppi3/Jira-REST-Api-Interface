@@ -1,28 +1,26 @@
 {
-    "fields": {
-        "description": {
-        "content": [
-
-        ],
-        "type": "doc",
-        "version": 1
-        },
-        "issuetype": {
-        "id": "10002"
-        },
-        "labels": [
-        ""
-        ],
-        "priority": {
-        "id": "3"
-        },
-        "project": {
-        "key": "LZBICT"
-        },
-        "reporter": {
-        "id": "712020:7e6e9100-8b72-4b45-b94c-b62ba6dfd56f"
-        },
-        "summary": "TEST TICKET"
-    },
+"fields": {
+	"description": {
+		"version": 1,
+		"type": "doc",
+		"content": [
+		]},
+	"issuetype": {
+		"id": "10002"
+	},
+	"labels": [
+	""
+	],
+	"priority": {
+		"id": "3"
+	},
+	"project": {
+		"key": "LZBICT"
+	},
+	"reporter": {
+		"id": "712020:7e6e9100-8b72-4b45-b94c-b62ba6dfd56f"
+	},
+	"summary": "TEST TICKET"
+	},
 "update": {}
 }

@@ -15,6 +15,33 @@ import copy
 load_dotenv()
 DONOTSEND = False
 
+def generateRow(_list):
+    header = {
+            "type": "tableRow",
+            "content": []
+            }
+    for i,arg in enumerate(_list):
+        content = { 
+            "type": "tableCell",
+            "attrs": {},
+            "content": [
+            {
+                "type": "paragraph",
+                "content": [
+                {
+                "type": "text",
+                "text": arg
+                }
+                ]
+            }]
+        }
+        header["content"].append(content)
+    return header
+        
+
+        
+    
+
 class TableData:
     def __init__(self,name,data,fileName,pageNumber,creationDate):
         self.name = name
@@ -28,7 +55,7 @@ class Ticket:
     def __init__(self, data, file_name, company, ticketType):
         # Api info
         self.url = "https://santis.atlassian.net/rest/api/3/issue"
-        self.email = "joel.bonini@santismail.ch"
+        self.email = "jonathan.wyss@santismail.ch"
         self.token = os.getenv("TOKEN")
         # Auth
         self.auth = HTTPBasicAuth(self.email, self.token)
@@ -48,8 +75,6 @@ class Ticket:
         # Check if input is empty
         if not self.data:
             print("Input Data is empty")
-        else:
-            self.format_data()
 
         # Headers so the api knows what format of data to expect and what format the response should be
         self.headers = {
@@ -80,23 +105,22 @@ class Ticket:
                 for objct in self.data:
                     self.tableRows.append([objct.Kürzel, objct.Name, objct.Vorname, objct.Abteilung, getattr(objct, "Platz-Nr.", "")])
 
-        self.table = {
-            "type": "table",
-            "content": [
-                           {
-                               "type": "tableRow",
-                               "content": [{"type": "tableHeader", "content": [{"type": "text", "text": col}]} for col
-                                           in self.tableHeaders]
-                           }
-                       ] + [
-                           {
-                               "type": "tableRow",
-                               "content": [{"type": "tableCell", "content": [{"type": "text", "text": str(cell)}]} for
-                                           cell in row]
-                           }
-                           for row in self.tableRows
-                       ]
-        }
+        templateTable = {
+                    "type": "table",
+                    "attrs": {
+                        "isNumberColumnEnabled": False,
+                        "layout": "center",
+                        "width": 900,
+                        "displayMode": "default"
+                    },
+                    "content": [
+                        ]
+                    }
+        templateTable["content"].append(generateRow(self.tableHeaders))
+        for row in self.tableRows:
+            templateTable["content"].append(generateRow(row))
+        self.table = templateTable
+        print("template table:",json.dumps(templateTable))
 
 
     # Create the Payload from a Template and input data
@@ -104,14 +128,17 @@ class Ticket:
         with open("TemplatePayload.json", "r") as file:
             template_data = json.load(file)
             payload = template_data
+            print("before edit:",json.dumps(template_data,separators = (", "," : ")))
+
             payload["fields"]["description"]["content"].append(self.table)
 
             payload["fields"]["labels"] = self.label if self.label else []
 
-
-        payload = json.dumps(payload)
-        print(payload)
-        return payload
+        
+        print("before dump:",payload)
+        payload2 = json.dumps(payload)
+        print(payload2)
+        return payload2
 
 
 
@@ -121,23 +148,28 @@ class Ticket:
         payload = self.create_payload()
         # Create ticket
         print("SUMMARY: ", self.summary)
+        print()
         if DONOTSEND == False:
             print("sending...")
-            response = requests.post(self.url, data=payload, headers=self.headers, auth=self.auth)
-            print(response.status_code)
-            print(response.text)
-            self.id = response.json()["id"]
+            yes = input("really create ticket? insert (yes):")
+            if yes == "yes":
+                response = requests.post(self.url, data=payload, headers=self.headers, auth=self.auth)
+                print(response.status_code)
+                print(response.text)
+                self.id = response.json()["id"]
+            else:
+                print("abort")
         else:
             print("not sending, to not spam Jira while not in production")
 
         # Attach PDF to ticket
-        if DONOTSEND == False:
-            response2 = requests.post(
-                self.url + self.id + "attachements",
-                headers=self.headers,
-                auth=self.auth,
-                files={"file": (self.file_name, open(self.file_name, "rb"), "application-type")}
-            )
+        #if DONOTSEND == False:
+         #   response2 = requests.post(
+         #       self.url + self.id + "attachements",
+         #       headers=self.headers,
+         #       auth=self.auth,
+         #       files={"file": (self.file_name, open(self.file_name, "rb"), "application-type")}
+          #  )
             print("Response 1: ", response)
             print(response.text)
             print("Response 2: ", response2)
