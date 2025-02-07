@@ -1,39 +1,27 @@
 {
     "fields": {
-        "assignee": {
-        "id": ""
-        },
         "description": {
-        "content": [
-            {
-            "content": [
-                {
-                "text": "",
-                "type": "text"
-                }
-            ],
-            "type": "paragraph"
-            }
-        ],
-        "type": "doc",
-        "version": 1
-        },
-        "issuetype": {
-        "id": ""
-        },
-        "labels": [
-        ""
-        ],
-        "priority": {
-        "id": ""
-        },
-        "project": {
-        "key": "LZBICT"
-        },
-        "reporter": {
-        "id": "712020:7e6e9100-8b72-4b45-b94c-b62ba6dfd56f"
-        },
-        "summary": ""
+		"version": 1,
+		"type": "doc",
+		"content": [
+
+		]},
+	"issuetype": {
+		"id": "10002"
+	},
+	"labels": [
+	""
+	],
+	"priority": {
+		"id": "3"
+	},
+	"project": {
+		"key": "LZBICT"
+	},
+	"reporter": {
+		"id": "712020:7e6e9100-8b72-4b45-b94c-b62ba6dfd56f"
+	},
+        "summary": "TEST TICKET"
     },
 "update": {}
 }
