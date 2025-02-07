@@ -12,7 +12,7 @@ import copy
 
 # load .env file
 load_dotenv()
-
+DONOTSEND = True
 
 
 class Ticket:
@@ -31,9 +31,12 @@ class Ticket:
         self.summary = ""
         self.id = ""
         self.company = company
-        self.table_data = [["Kürzel", "Name", "Vorname"]]
-        self.table = None
 
+        # Check if input is empty
+        if not self.data:
+            print("Input Data is empty")
+        else:
+            self.format_data()
 
         # Headers so the api knows what format of data to expect and what format the response should be
         self.headers = {
@@ -45,27 +48,26 @@ class Ticket:
 
     # Format data in a way to use the payload template easily
     def format_data(self):
-        self.summary = "TEST TICKET"
+        for obj in self.data:
+            print("count obj:",obj)
+            print(dir(obj))
+
         for objct in self.data:
-            self.table_data.append([objct.Kürzel, objct.Name, objct.Vorname])
+            if "Abteilung vorher" in  dir(objct):
+                self.label = ["Arbeitsplatzwechsel"]
+                string = self.file_name.split()[3].split(".pdf")[0]
+                self.summary = self.company + " Arbeitplatzwechsel " +  string
+                print(self.summary)
+                self.description += objct.Kürzel + " " + objct.Name + " " + objct.Vorname + " "
+                self.description += getattr(objct, "Abteilung vorher") + " ➡️ " + getattr(objct, "Abteilung neu") + "\n"
 
-        table_content = []
-        for i, row in enumerate(self.table_data):
-            row_content = []
-            for cell in row:
-                cell_type = "tableHeader" if i == 0 else "tableCell"
-                row_content.append({
-                    "type": cell_type,
-                    "content": [{"type": "text", "text": cell}]
-                })
-            table_content.append({"type": "tableRow", "content": row_content})
-
-        return {
-            "type": "table",
-            "content": table_content
-        }
-
-
+            else:
+                self.label = ["Neueintritt"]
+                self.summary = self.company + " Neueintritte " + self.file_name.split()[3]
+                if self.company == "SANTIS":
+                    self.description += objct.Kürzel + " " + objct.Name + " " + objct.Vorname + " " + getattr(objct, "Platz-Nr") + "\n"
+                else:
+                    self.description += objct.Kürzel + objct.Name + objct.Vorname + objct.Abteilung
 
     # Create the Payload from a Template and input data
     def create_payload(self):
@@ -73,7 +75,7 @@ class Ticket:
             template_data = json.load(file)
             payload = template_data
             payload["fields"]["assignee"]["id"] = None
-            payload["fields"]["description"]["content"] = self.table
+            payload["fields"]["description"]["content"][0]["content"][0]["text"] = self.description
             payload["fields"]["issuetype"]["id"] = 10002
             payload["fields"]["labels"] = self.label
             payload["fields"]["priority"]["id"] = "3"
@@ -84,23 +86,32 @@ class Ticket:
 
     # Send payload to Jira Api --> Ticket creation
     def create_ticket(self):
-        self.table = self.format_data()
+        self.format_data()
         payload = self.create_payload()
         # Create ticket
         print("SUMMARY: ", self.summary)
-        response = requests.post(self.url, data=payload, headers=self.headers, auth=self.auth)
-        print(response)
-        print(response.text)
+        if DONOTSEND == False:
+            print("sending...")
+            response = requests.post(self.url, data=payload, headers=self.headers, auth=self.auth)
+            print(response)
+            print(response.text)
+            self.id = response.json()["id"]
+        else:
+            print("not sending, to not spam Jira while not in production")
+
         # Get ticket id
-        self.id = response.json()["id"]
+
         # Attach PDF to ticket
-        response2 = requests.post(
-            f"{self.url}/{self.id}/attachments",
-            headers=self.headers,
-            auth=self.auth,
-            files={"file": (self.file_name, open(self.file_name, "rb"), "application-type")}
-        )
-        print("Response 2: ", response2)
+        if DONOTSEND == False:
+            response2 = requests.post(
+                self.url + self.id + "attachements",
+                headers=self.headers,
+                auth=self.auth,
+                files={"file": (self.file_name, open(self.file_name, "rb"), "application-type")}
+            )
+            print("Response 1: ", response)
+            print(response.text)
+            print("Response 2: ", response2)
 
 
 
@@ -108,25 +119,26 @@ class Ticket:
 
 
 
+if __name__=="__main__":
+
+    tables = pdf.Tables("Arbeitsplatzeinteilung KW 04 20.01.2025.pdf")
+    pdf.setDebugLevel(err.ERROR)
+    tables.selectPage(0)
+    listTable = tables.setTableNames(["Tabelle 1", "Arbeitsplatzwechsel", "NEUEINTRITT","NEUEINTRITTE"])
+
+    objlist = []
+    for table in listTable:
+        tables.selectTableByObj(table)
+        tables.defRows(["Vorname","Name","Kürzel","Abteilung vorher","Abteilung neu","Platz-Nr","Abteilung"])
+        tables.parseTable()
+
+        obj_list = tables.getObjectsFromTable()
+        for obj in obj_list:
+            objcpy = copy.deepcopy(obj)
+            objlist.append(objcpy)
+            print(obj)
+            print(obj_list)
 
 
-tables = pdf.Tables("Arbeitsplatzeinteilung KW 04 20.01.2025.pdf")
-pdf.setDebugLevel(err.ERROR)
-tables.selectPage(0)
-listTable = tables.setTableNames(["NEUEINTRITT","NEUEINTRITTE", "Arbeitsplatzwechsel", "ARBEITSPLATZWECHSEL" ])
-
-objlist = []
-for table in listTable:
-    tables.selectTableByObj(table)
-    tables.defRows(["Vorname","Name","Kürzel","Abteilung vorher","Abteilung neu","Platz-Nr","Abteilung"])
-    tables.parseTable()
-
-    obj_list = tables.getObjectsFromTable()
-    for obj in obj_list:
-        objcpy = copy.deepcopy(obj)
-        objlist.append(objcpy)
-
-
-
-ticket = Ticket(objlist, "Arbeitsplatzeinteilung KW 04 20.01.2025.pdf", "ALLPOWER")
-ticket.create_ticket()
+    ticket = Ticket(objlist, "Arbeitsplatzeinteilung KW 04 20.01.2025.pdf", "ALLPOWER")
+    ticket.create_ticket()
