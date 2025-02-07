@@ -1,7 +1,7 @@
 # Application to create Jira-Tickets automaticaly from received E-mails about new employees
 # Using: Jira REST-API
 # Author(s): Joel Bonini, Jonathan Wyss
-# Last Updated: Joel Bonini 04/02/25
+# Last Updated: Jonathan Wyss 07/02/25
 import requests, json, os
 from requests.auth import HTTPBasicAuth
 from dotenv import load_dotenv
