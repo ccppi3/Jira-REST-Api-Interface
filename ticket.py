@@ -12,14 +12,14 @@ import copy
 
 # load .env file
 load_dotenv()
-DONOTSEND = True
+DONOTSEND = False
 
 
 class Ticket:
     def __init__(self, data, file_name, company):
         # Api info
         self.url = "https://santis.atlassian.net/rest/api/3/issue"
-        self.email = "joel.bonini@santismail.ch"
+        self.email = "jonathan.wyss@santismail.ch"
         self.token = os.getenv("TOKEN")
         # Auth
         self.auth = HTTPBasicAuth(self.email, self.token)
