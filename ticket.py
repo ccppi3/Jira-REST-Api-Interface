@@ -13,14 +13,14 @@ import copy
 
 # load .env file
 load_dotenv()
-DONOTSEND = True
+DONOTSEND = False
 
-def generateRow(*args):
+def generateRow(_list):
     header = {
             "type": "tableRow",
             "content": []
             }
-    for i,arg in enumerate(args):
+    for i,arg in enumerate(_list):
         content = { 
             "type": "tableCell",
             "attrs": {},
@@ -75,8 +75,6 @@ class Ticket:
         # Check if input is empty
         if not self.data:
             print("Input Data is empty")
-        else:
-            self.format_data()
 
         # Headers so the api knows what format of data to expect and what format the response should be
         self.headers = {
@@ -116,13 +114,12 @@ class Ticket:
                         "displayMode": "default"
                     },
                     "content": [
-                        {
-                        }
                         ]
                     }
-
-        templateTable["content"].append(generateRow("row1","tow2","row3","row4"))
-
+        templateTable["content"].append(generateRow(self.tableHeaders))
+        for row in self.tableRows:
+            templateTable["content"].append(generateRow(row))
+        self.table = templateTable
         print("template table:",json.dumps(templateTable))
 
 
@@ -154,21 +151,25 @@ class Ticket:
         print()
         if DONOTSEND == False:
             print("sending...")
-            response = requests.post(self.url, data=payload, headers=self.headers, auth=self.auth)
-            print(response.status_code)
-            print(response.text)
-            self.id = response.json()["id"]
+            yes = input("really create ticket? insert (yes):")
+            if yes == "yes":
+                response = requests.post(self.url, data=payload, headers=self.headers, auth=self.auth)
+                print(response.status_code)
+                print(response.text)
+                self.id = response.json()["id"]
+            else:
+                print("abort")
         else:
             print("not sending, to not spam Jira while not in production")
 
         # Attach PDF to ticket
-        if DONOTSEND == False:
-            response2 = requests.post(
-                self.url + self.id + "attachements",
-                headers=self.headers,
-                auth=self.auth,
-                files={"file": (self.file_name, open(self.file_name, "rb"), "application-type")}
-            )
+        #if DONOTSEND == False:
+         #   response2 = requests.post(
+         #       self.url + self.id + "attachements",
+         #       headers=self.headers,
+         #       auth=self.auth,
+         #       files={"file": (self.file_name, open(self.file_name, "rb"), "application-type")}
+          #  )
             print("Response 1: ", response)
             print(response.text)
             print("Response 2: ", response2)

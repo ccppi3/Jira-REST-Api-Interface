@@ -146,7 +146,13 @@ for table in tableDataList:
         print(entry)
         tempObjs.append(entry)
     print("-------------------------------------\n")
-    ticketTable = ticket.Ticket(tempObjs,filename,"Allpower")
+    if "arbeitsplatzwechsel" in str(table.name).lower():
+        ticketTable = ticket.Ticket(tempObjs,filename,"Allpower","arbeitsplatzwechsel")
+    elif "neueintritte" in str(table.name).lower():
+        ticketTable = ticket.Ticket(tempObjs,filename,"Allpower","neueintritt")
+    elif "neueintritt" in str(table.name).lower():
+        ticketTable = ticket.Ticket(tempObjs,filename,"Allpower","neueintritte")
+
     ticketTable.create_ticket()
     
     
