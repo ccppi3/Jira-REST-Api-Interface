@@ -12,7 +12,7 @@ import copy
 
 # load .env file
 load_dotenv()
-DONOTSENND = True
+DONOTSEND = True
 
 
 class Ticket:
@@ -93,23 +93,25 @@ class Ticket:
         if DONOTSEND == False:
             print("sending...")
             response = requests.post(self.url, data=payload, headers=self.headers, auth=self.auth)
+            print(response)
+            print(response.text)
+            self.id = response.json()["id"]
         else:
-            print("not sending, to not spam Jira while in production")
+            print("not sending, to not spam Jira while not in production")
 
         # Get ticket id
-        print(response)
-        print(response.text)
-        self.id = response.json()["id"]
+
         # Attach PDF to ticket
-        response2 = requests.post(
-            self.url + self.id + "attachements",
-            headers=self.headers,
-            auth=self.auth,
-            files={"file": (self.file_name, open(self.file_name, "rb"), "application-type")}
-        )
-        print("Response 1: ", response)
-        print(response.text)
-        print("Response 2: ", response2)
+        if DONOTSEND == False:
+            response2 = requests.post(
+                self.url + self.id + "attachements",
+                headers=self.headers,
+                auth=self.auth,
+                files={"file": (self.file_name, open(self.file_name, "rb"), "application-type")}
+            )
+            print("Response 1: ", response)
+            print(response.text)
+            print("Response 2: ", response2)
 
 
 

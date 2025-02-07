@@ -3,6 +3,7 @@ import pdf
 import os
 import copy
 import com
+import ticket
 from pop3 import log,err
 
 from dotenv import load_dotenv
@@ -14,6 +15,7 @@ def removeIndexesFromList(indexListRemove,_list):
             del _list[i]
         except:
             log("indexListRemove:",indexListRemove,"\nlist:",_list," len:",len(_list),"\ni:",i)
+
 class TableData:
     def __init__(self,name,data,fileName,pageNumber,creationDate):
         self.name = name
@@ -139,8 +141,13 @@ for table in tableDataList:
     filenameList = str(table.fileName).split("\\")
     filename = filenameList[len(filenameList)-1]
     print("--------¦",table.name,"¦-------------¦","filename: ",filename, "pageNr:", table.pageNumber,"Date: ",table.creationDate)
+    tempObjs = []
     for entry in table.data:
         print(entry)
+        tempObjs.append(entry)
     print("-------------------------------------\n")
-
+    ticketTable = ticket.Ticket(tempObjs,filename,"Allpower")
+    ticketTable.create_ticket()
+    
+    
 
