@@ -42,9 +42,11 @@ def run():
     newAdded = []
     uidsMail = []
     log("parsing uids...")
+    yield "parsing uids..."
+
     uids = com.getEntryIDDb()
     uidsMail = com.getEntryIDMail(filterName)
-
+    
     if uidsMail:
         newAdded = com.addEntryIDDb(uidsMail)
     if len(newAdded)==0:
@@ -60,8 +62,10 @@ def run():
     for a in newFileList:
         log("Download :",a.path,a.uid)
         com.downloadAttachements(a.uid)
+        yield "Download..." + str(a.path)
     
     printStatistics(uids,newAdded,newFileList)
+    yield "Running PDFParser..."
     tableDataList = _runPdfParser(newFileList)
     tablesToTicket(tableDataList)
 
@@ -150,4 +154,5 @@ def _trimNewAdded(newAddedList):#get attachements, on double entries, choose the
     return newFileList
 
 if __name__=="__main__":
-    run()
+    for x in run():
+        print("[main]",x)
