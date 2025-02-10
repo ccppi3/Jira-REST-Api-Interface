@@ -211,7 +211,6 @@ class Ticket:
                     }
                 )
         print("Response 1: ", response)
-        print(response.text)
         
 
 

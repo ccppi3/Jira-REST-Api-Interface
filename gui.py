@@ -5,6 +5,7 @@ import time
 import tkinter as tk
 from tkinter import ttk
 import threading
+import main
 
 from pymupdf.mupdf import UCDN_SCRIPT_OLD_UYGHUR
 
@@ -62,19 +63,28 @@ class App:
     def refresh_button_handler(self):
         # Define threads
         self.loadingThread = threading.Thread(target=self.loading)
-        self.fetchThread = threading.Thread(target=self.test_thread)
+        self.fetchThread = threading.Thread(target=self.fetchProcess)
 
         # Start threads
         self.fetchThread.start()
         self.loadingThread.start()
 
+    def fetchProcess(self):
+        print("self:",self)
+        for ret in main.run():
+            if type(ret) == list:
+                self.tableListData = ret
+            else:
+                self.status_label.config(text="Status: " + str(ret))
+        self.data = self.tableListData
+        self.create_table()
 
     def test_thread(self):
         for i in range(100):
             time.sleep(0.1)
 
 
-    # Loading function to diable buttons and display progressbar
+    # Loading function to disable buttons and display progressbar
     def loading(self):
         # Display a loading bar
         self.status_bar = ttk.Progressbar(mode="indeterminate")
@@ -131,19 +141,28 @@ class App:
                 self.columns = ["Kürzel", "Name", "Vorname", "Abteilung Vorher", "Abteilung Neu"]
                 for employee in self.data:
                     for item in self.columns:
-                        templist.append(getattr(employee, item))
+                        try:
+                            templist.append(getattr(employee, item))
+                        except:
+                            templist.append("NotFound")
 
             case "neueintritt":
                 self.columns = ["Kürzel", "Name", "Vorname", "Abteilung"]
                 for employee in self.data:
                     for item in self.columns:
-                        templist.append(getattr(employee, item))
+                        try:
+                            templist.append(getattr(employee, item))
+                        except:
+                            templist.append("NotFound")
 
             case "neueintritte":
                 self.columns = ["Kürzel", "Name", "Vorname", "Abteilung", "Platz-Nr."]
                 for employee in self.data:
                     for item in self.columns:
-                        templist.append(getattr(employee, item))
+                        try:
+                            templist.append(getattr(employee, item))
+                        except:
+                            templist.append("NotFound")
         # Create table
         self.employee_table = ttk.Treeview(self.master, columns=self.columns, show="headings", height=10)
         for item in self.columns:
