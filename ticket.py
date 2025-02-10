@@ -147,7 +147,7 @@ class Ticket:
             print("before edit:",json.dumps(template_data,separators = (", "," : ")))
 
             payload["fields"]["description"]["content"].append(self.table)
-
+            payload["fields"]["summary"] = self.summary
             payload["fields"]["labels"] = self.label if self.label else []
 
         
