@@ -23,8 +23,6 @@ class TableData:
         self.pageNumber = pageNumber
         self.creationDate = creationDate
 
-
-
 #load data from .env
 load_dotenv()
 filterName = os.getenv('FilterName')
@@ -67,7 +65,9 @@ def run():
     printStatistics(uids,newAdded,newFileList)
     yield "Running PDFParser..."
     tableDataList = _runPdfParser(newFileList)
-    tablesToTicket(tableDataList)
+    yield "finished parsing"
+    yield tableDataList
+
 
 def printStatistics(uidsMail,newAdded,newFileList):
     log("\033[37;42m",level=err.NONE) #ansi escape sequence to change color
@@ -155,4 +155,9 @@ def _trimNewAdded(newAddedList):#get attachements, on double entries, choose the
 
 if __name__=="__main__":
     for x in run():
-        print("[main]",x)
+        if type(x) == list: #last yield returns the tableData
+            tablesToTicket(x)
+        else:#return is status string
+            print("[main]",x)
+        
+

@@ -96,15 +96,29 @@ class Ticket:
             case "arbeitsplatzwechsel":
                 self.tableHeaders = ["Kürzel", "Name", "Vorname", "Abteilung Vorher", "Abteilung Neu"]
                 for objct in self.data:
-                    self.tableRows.append([objct.Kürzel, objct.Name, objct.Vorname, getattr(objct, "Abteilung vorher", ""), getattr(objct, "Abteilung neu", "")])
+                    try:
+                        self.tableRows.append([objct.Kürzel, objct.Name, objct.Vorname, getattr(objct, "Abteilung vorher", ""), getattr(objct, "Abteilung neu", "")])
+                    except:
+                        print("there are missing object attributes, assume the list is empty so cancel")
+                        return 1
+
             case "neueintritt":
                 self.tableHeaders = ["Kürzel", "Name", "Vorname", "Abteilung / Platz-Nr."]
                 for objct in self.data:
-                    self.tableRows.append([objct.Kürzel, objct.Name, objct.Vorname, objct.Abteilung])
+                    try:
+                        self.tableRows.append([objct.Kürzel, objct.Name, objct.Vorname, objct.Abteilung])
+                    except:
+                        print("there are missing object attributes, assume the list is empty so cancel")
+                        return 1
+
             case "neueintritte":
                 self.tableHeaders = ["Kürzel", "Name", "Vorname", "Abteilung", "Platz-Nr."]
                 for objct in self.data:
-                    self.tableRows.append([objct.Kürzel, objct.Name, objct.Vorname, objct.Abteilung, getattr(objct, "Platz-Nr.", "")])
+                    try:
+                        self.tableRows.append([objct.Kürzel, objct.Name, objct.Vorname, objct.Abteilung, getattr(objct, "Platz-Nr.", "")])
+                    except:
+                        print("there are missing object attributes, assume the list is empty so cancel")
+                        return 1
 
         templateTable = {
                     "type": "table",
@@ -145,7 +159,9 @@ class Ticket:
 
     # Send payload to Jira Api --> Ticket creation
     def create_ticket(self):
-        self.format_data()
+        if self.format_data() == 1:
+            print("create_ticket abort")
+            return 1
         payload = self.create_payload()
         # Create ticket
         print("SUMMARY: ", self.summary)
@@ -205,4 +221,5 @@ if __name__=="__main__":
 
 
     ticket = Ticket(objList, "Arbeitsplatzeinteilung KW 04 20.01.2025.pdf", "ALLPOWER", "Neueintritt")
-    ticket.create_ticket()
+    if ticket.create_ticket() == 1:
+        print("ticket creation aborted")
