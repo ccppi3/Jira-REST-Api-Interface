@@ -84,8 +84,11 @@ class App:
         self.confirm_button.config(state=tk.DISABLED)
         self.refresh_button.config(state=tk.DISABLED)
         # Wait until Thread is finished
-        while self.fetchThread.is_alive() or self.postThread.is_alive():
-            time.sleep(0.1)
+        try:
+            while self.fetchThread.is_alive() or self.postThread.is_alive():
+                time.sleep(0.1)
+        except:
+            pass
 
 
         # Reavtivate buttons
