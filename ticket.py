@@ -64,8 +64,9 @@ class Ticket:
         self.data = data
         self.file_name = file_name
         self.description = ""
-        self.label = ["Neueintritt"]
-        self.summary = "Testing API"
+        self.label = [ticketType]
+        self.summary = ticketType + " " + file_name[29:-4]
+        print(self.summary)
         self.id = ""
         self.table = ""
         self.company = company
