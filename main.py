@@ -8,7 +8,6 @@ from pop3 import log,err
 
 from dotenv import load_dotenv
 
-
 def removeIndexesFromList(indexListRemove,_list):
     for i in sorted(indexListRemove,reverse=True): #remove allways highest order first because else the index moves
         try:
@@ -23,69 +22,56 @@ class TableData:
         self.fileName = fileName
         self.pageNumber = pageNumber
         self.creationDate = creationDate
-        
-PDFNAMEFILTER = os.getenv('PdfNameFilter')
-load_dotenv()
 
-pdf.setDebugLevel(err.ULTRA,_filter="")
-pop3.setDebugLevel(err.ULTRA)
+
 
 #load data from .env
+load_dotenv()
 filterName = os.getenv('FilterName')
 password = os.getenv('MailPassword')
+PDFNAMEFILTER = os.getenv('PdfNameFilter')
 
 #settings
 host = os.getenv('Host')
 user = os.getenv('Mail')
 port = os.getenv('Port') 
 
-#mailbox = pop3.setupPOP(host,port,user,password)
-
-#uids = pop3.getUidsDb()
-#uidsMail = pop3.getUidsMail(mailbox)
-#newAdded = pop3.addUidsDb(uidsMail)
-
+pdf.setDebugLevel(err.INFO,_filter="")
+pop3.setDebugLevel(err.INFO)
 def run():
     newAdded = []
     uidsMail = []
     log("parsing uids...")
     uids = com.getEntryIDDb()
     uidsMail = com.getEntryIDMail(filterName)
+
     if uidsMail:
         newAdded = com.addEntryIDDb(uidsMail)
-
     if len(newAdded)==0:
         log("No new mail, nothing to do",level=err.NONE)
-
     for uid in newAdded:
         log("newadded:",uid," type:",type(uid))
 
     newFileList = _trimNewAdded(newAdded)
-
-    try:             
-        log("newFileList:",newFileList,level=err.ULTRA)
-    except:
-        log("no new Filelist",level=err.ULTRA)
-
-    log("done parsing, doing some filtering")
+    log("newFileList:",newFileList,level=err.INFO)
 
     newFileList = _removeDoubles(newFileList)
     #newFilelist = _filterList(newFileList)
-
     for a in newFileList:
         log("Download :",a.path,a.uid)
         com.downloadAttachements(a.uid)
+    
+    printStatistics(uids,newAdded,newFileList)
+    tableDataList = _runPdfParser(newFileList)
+    tablesToTicket(tableDataList)
 
+def printStatistics(uidsMail,newAdded,newFileList):
     log("\033[37;42m",level=err.NONE) #ansi escape sequence to change color
     log("I checked ",len(list(uidsMail))," uids, processed ",len(newAdded)," new mails and downloaded ",len(newFileList)," files\033[0m",level=err.NONE);
     log("\033[0m",level=err.NONE)#ansi reset color
 
-    tableDataList = _runPdfParser(newFileList)
-    tablesToTicket(tableDataList)
-
 def _runPdfParser(newFileList): #helper function witch wraps all the parsing calls, and copys the volatile data into a non volatile memory
     tableDataList = []
-
     for file in newFileList:
         tables = pdf.Tables(file.path)
         countPage = tables.countPages()
@@ -121,8 +107,8 @@ def tablesToTicket(tableDataList): #tackes the tabledata and creates a ticket fo
             ticketTable = ticket.Ticket(tempObjs,filename,"Allpower","neueintritt")
         elif "neueintritt" in str(table.name).lower():
             ticketTable = ticket.Ticket(tempObjs,filename,"Allpower","neueintritte")
-
         ticketTable.create_ticket()
+
 def _removeDoubles(newFileList):
     toBeRemoved = []
     for i in range(0,len(newFileList)-1):
