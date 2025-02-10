@@ -54,7 +54,7 @@ class TableData:
 class Ticket:
     def __init__(self,table, data, file_name, company, ticketType):
         # Api info
-        self.table = table
+        self.tableObj = table
         self.url = "https://santis.atlassian.net/rest/api/3/issue"
         self.email = "jonathan.wyss@santismail.ch"
         self.token = os.getenv("TOKEN")
@@ -195,7 +195,9 @@ class Ticket:
             print("Response 2: ", response2)
 
     def sendAttachment(self,ticketUrl):
-        ticketUrl = ticketUrl + "/attachements"
+        ticketUrl = ticketUrl + "/attachments"
+        print("self.table:",self.tableObj)
+        print("post url:",ticketUrl)
         headers = {
                 "Accept": "application/json",
                 "X-Atlassian-Token": "no-check"
@@ -205,7 +207,7 @@ class Ticket:
                 headers=headers,
                 auth=self.auth,
                 files = {
-                    "file": (self.file_name, open(self.table.fileName,"rb", "application-type"))
+                    "file": (self.file_name, open(self.tableObj.fileName,"rb"), "application-type")
                     }
                 )
         print("Response 1: ", response)
