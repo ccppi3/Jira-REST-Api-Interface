@@ -1,3 +1,6 @@
+#This implementation gets all mails from a running outlook instance witch are from a given sender and downloads the pdfs into the folder ./downloads
+#Author: Jonathan Wyss
+##Notes
 #https://learn.microsoft.com/en-us/office/vba/api/outlook.items
 #https://learn.microsoft.com/en-us/office/vba/api/outlook.attachment.saveasfile
 
