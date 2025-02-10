@@ -24,7 +24,7 @@ class TableData:
         self.pageNumber = pageNumber
         self.creationDate = creationDate
         
-PDFNAMEFILTER = "Arbeitsplatzeint"
+PDFNAMEFILTER = os.gentenv('PdfNameFilter')
 load_dotenv()
 
 pdf.setDebugLevel(err.ULTRA,_filter="")
@@ -52,8 +52,6 @@ uids = com.getEntryIDDb()
 uidsMail = com.getEntryIDMail(filterName)
 if uidsMail:
     newAdded = com.addEntryIDDb(uidsMail)
-
-
 
 if len(newAdded)==0:
     log("No new mail, nothing to do",level=err.NONE)
