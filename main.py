@@ -45,8 +45,6 @@ port = os.getenv('Port')
 #uidsMail = pop3.getUidsMail(mailbox)
 #newAdded = pop3.addUidsDb(uidsMail)
 
-
-
 def run():
     newAdded = []
     uidsMail = []
@@ -59,56 +57,21 @@ def run():
     if len(newAdded)==0:
         log("No new mail, nothing to do",level=err.NONE)
 
-    log("newadded")
     for uid in newAdded:
-        log("uid:",uid)
-        #iUid = uid.decode().split() #convert byte stream into two integers
-        log("type newadded:",type(uid))
-        log("newly added uid:",uid)
+        log("newadded:",uid," type:",type(uid))
 
+    newFileList = _trimNewAdded(newAdded)
 
-    newFileList = []
-    for uid in newAdded:
-        #msgNum = uid.decode().split()[0]
-        log("new uid to parse:",uid)
-        #newFileList = newFileList + pop3.parseMail(mailbox,msgNum,filterName)
-        for att in com.getAttachements(uid):
-            if att.path not in newFileList:
-                newFileList.append(att)
-                log("Date:",att.creationDate)
-            else:
-                for i,att2 in enumerate(newFileList):
-                    if att.path == att2.path:
-                        if att.creationDate > att2.creationDate:
-                            newFileList.pop(i)
-                            newFileList.append(att)
-                            break
     try:             
         log("newFileList:",newFileList,level=err.ULTRA)
     except:
         log("no new Filelist",level=err.ULTRA)
 
     log("done parsing, doing some filtering")
-    toBeRemoved = []
-    for i in range(0,len(newFileList)-1):
-        if i not in toBeRemoved:
-            for file2 in range(i+1,len(newFileList)):
-                log(newFileList[i].path," ",i," -> ",newFileList[file2].path," ",file2)
-                if newFileList[i].path == newFileList[file2].path:
-                    toBeRemoved.append(file2)
-                    log("Drop duble files: ",newFileList[i].path,"->",newFileList[file2].path,level=err.ERROR)
 
-    log("To be removed: ",toBeRemoved)
-    removeIndexesFromList(toBeRemoved,newFileList)
-    toBeRemoved.clear()
+    newFileList = _removeDoubles(newFileList)
+    #newFilelist = _filterList(newFileList)
 
-    #filter out: is a plausible pdf?
-
-    #for i,fileName in enumerate(newFileList):
-    #    if PDFNAMEFILTER not in fileName:
-    #        toBeRemoved.append(i)
-    #log("To be removed: ",toBeRemoved)
-    #removeIndexesFromList(toBeRemoved,newFileList)
     for a in newFileList:
         log("Download :",a.path,a.uid)
         com.downloadAttachements(a.uid)
@@ -117,6 +80,10 @@ def run():
     log("I checked ",len(list(uidsMail))," uids, processed ",len(newAdded)," new mails and downloaded ",len(newFileList)," files\033[0m",level=err.NONE);
     log("\033[0m",level=err.NONE)#ansi reset color
 
+    tableDataList = _runPdfParser(newFileList)
+    tablesToTicket(tableDataList)
+
+def _runPdfParser(newFileList): #helper function witch wraps all the parsing calls, and copys the volatile data into a non volatile memory
     tableDataList = []
 
     for file in newFileList:
@@ -136,7 +103,9 @@ def run():
                     objcpy = copy.deepcopy(tbl) # make a real copy of the data, else the data would be overwritten by the next page, as the data would be parsed as reference
                     objList.append(objcpy)
                 tableDataList.append(TableData(table.name,objList,table.fileName,table.pageNumber,file.creationDate))
+    return tableDataList
 
+def tablesToTicket(tableDataList): #tackes the tabledata and creates a ticket for each table
     for table in tableDataList:
         filenameList = str(table.fileName).split("\\")
         filename = filenameList[len(filenameList)-1]
@@ -154,6 +123,45 @@ def run():
             ticketTable = ticket.Ticket(tempObjs,filename,"Allpower","neueintritte")
 
         ticketTable.create_ticket()
-    
+def _removeDoubles(newFileList):
+    toBeRemoved = []
+    for i in range(0,len(newFileList)-1):
+        if i not in toBeRemoved:
+            for file2 in range(i+1,len(newFileList)):
+                log(newFileList[i].path," ",i," -> ",newFileList[file2].path," ",file2)
+                if newFileList[i].path == newFileList[file2].path:
+                    toBeRemoved.append(file2)
+                    log("Drop duble files: ",newFileList[i].path,"->",newFileList[file2].path,level=err.ERROR)
+
+    log("To be removed: ",toBeRemoved)
+    removeIndexesFromList(toBeRemoved,newFileList)
+    toBeRemoved.clear()
+    return newFileList
+
+def _filterList(fileNameList,pdfNameFilter=PDFNAMEFILTER): #filter out: is a plausible pdf?
+    for i,fileName in enumerate(fileNameList):
+        if pdfNameFilter not in fileName:
+            toBeRemoved.append(i)
+    log("To be removed: ",toBeRemoved)
+    removeIndexesFromList(toBeRemoved,fileNameList)
+    return fileNameList
+
+def _trimNewAdded(newAddedList):#get attachements, on double entries, choose the newest and drop the older
+    newFileList = []
+    for uid in newAddedList:
+        log("new uid to parse:",uid)
+        for att in com.getAttachements(uid):
+            if att.path not in newFileList:
+                newFileList.append(att)
+                log("Date:",att.creationDate)
+            else:
+                for i,att2 in enumerate(newFileList):
+                    if att.path == att2.path:
+                        if att.creationDate > att2.creationDate:
+                            newFileList.pop(i)
+                            newFileList.append(att)
+                            break
+    return newFileList
+
 if __name__=="__main__":
     run()
