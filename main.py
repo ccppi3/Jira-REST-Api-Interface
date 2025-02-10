@@ -64,7 +64,14 @@ def run():
     
     printStatistics(uids,newAdded,newFileList)
     yield "Running PDFParser..."
-    tableDataList = _runPdfParser(newFileList)
+
+    tableDataList = []
+    for ret in _runPdfParser(newFileList):
+        if type(ret) == list:
+            tableDataList = ret
+        else:
+            yield ret
+
     yield "finished parsing"
     yield tableDataList
 
@@ -81,6 +88,7 @@ def _runPdfParser(newFileList): #helper function witch wraps all the parsing cal
         countPage = tables.countPages()
         for pageNr in range(countPage):
             log("Parse page ",pageNr," of file ",file,level=err.NONE)
+            yield "Parse:" + str(file).split("\\")[len(str(file).split("\\"))-1] + " Page " + str(pageNr)
             tables.selectPage(pageNr)
             listTable = tables.setTableNames(["Tabelle 1","NEUEINTRITT","Arbeitsplatzwechsel","NEUEINTRITTE"])
             for i,table in enumerate(listTable):
