@@ -1,3 +1,6 @@
+#This is an abstraction library on top of pymupdf, it implements algorythms to detect table beginnings and margins inside PDF files
+#Author: Jonathan Wyss
+#
 ##NOTE
 ##Coordination origin in PDF is bottom left!
 ##But pymupdf has its origin in the top left

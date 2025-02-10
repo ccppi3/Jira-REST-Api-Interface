@@ -1,3 +1,6 @@
+#Implementatiion of a mail client to get all Pdfs sent from a given sender.
+#Author: Jonathan Wyss
+
 import poplib
 from getpass import getpass
 from email.parser import Parser
