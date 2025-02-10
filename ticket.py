@@ -52,8 +52,9 @@ class TableData:
 
 
 class Ticket:
-    def __init__(self, data, file_name, company, ticketType):
+    def __init__(self,table, data, file_name, company, ticketType):
         # Api info
+        self.table = table
         self.url = "https://santis.atlassian.net/rest/api/3/issue"
         self.email = "jonathan.wyss@santismail.ch"
         self.token = os.getenv("TOKEN")
@@ -174,6 +175,8 @@ class Ticket:
                 print(response.status_code)
                 print(response.text)
                 self.id = response.json()["id"]
+                url = response.json()["self"]
+                self.sendAttachment(url)
             else:
                 print("abort")
         else:
@@ -191,8 +194,23 @@ class Ticket:
             print(response.text)
             print("Response 2: ", response2)
 
-
-
+    def sendAttachment(self,ticketUrl):
+        ticketUrl = ticketUrl + "/attachements"
+        headers = {
+                "Accept": "application/json",
+                "X-Atlassian-Token": "no-check"
+                }
+        response = requests.post(
+                ticketUrl,
+                headers=headers,
+                auth=self.auth,
+                files = {
+                    "file": (self.file_name, open(self.table.fileName,"rb", "application-type"))
+                    }
+                )
+        print("Response 1: ", response)
+        print(response.text)
+        
 
 
 
@@ -220,6 +238,6 @@ if __name__=="__main__":
 
 
 
-    ticket = Ticket(objList, "Arbeitsplatzeinteilung KW 04 20.01.2025.pdf", "ALLPOWER", "Neueintritt")
-    if ticket.create_ticket() == 1:
-        print("ticket creation aborted")
+        ticket = Ticket(table,objList, "Arbeitsplatzeinteilung KW 04 20.01.2025.pdf", "ALLPOWER", "Neueintritt")
+        if ticket.create_ticket() == 1:
+            print("ticket creation aborted")

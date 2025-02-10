@@ -106,11 +106,11 @@ def tablesToTicket(tableDataList): #tackes the tabledata and creates a ticket fo
             tempObjs.append(entry)
         print("-------------------------------------\n")
         if "arbeitsplatzwechsel" in str(table.name).lower():
-            ticketTable = ticket.Ticket(tempObjs,filename,"Allpower","arbeitsplatzwechsel")
+            ticketTable = ticket.Ticket(table,tempObjs,filename,"Allpower","arbeitsplatzwechsel")
         elif "neueintritte" in str(table.name).lower():
-            ticketTable = ticket.Ticket(tempObjs,filename,"Allpower","neueintritt")
+            ticketTable = ticket.Ticket(table,tempObjs,filename,"Allpower","neueintritt")
         elif "neueintritt" in str(table.name).lower():
-            ticketTable = ticket.Ticket(tempObjs,filename,"Allpower","neueintritte")
+            ticketTable = ticket.Ticket(table,tempObjs,filename,"Allpower","neueintritte")
         ticketTable.create_ticket()
 
 def _removeDoubles(newFileList):
@@ -154,10 +154,10 @@ def _trimNewAdded(newAddedList):#get attachements, on double entries, choose the
     return newFileList
 
 if __name__=="__main__":
-    for x in run():
-        if type(x) == list: #last yield returns the tableData
+    for ret in run():
+        if type(ret) == list: #last yield returns the tableData
             tablesToTicket(x)
         else:#return is status string
-            print("[main]",x)
+            print("[main]",ret)
         
 
