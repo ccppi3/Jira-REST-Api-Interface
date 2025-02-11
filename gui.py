@@ -8,6 +8,7 @@ import threading
 from functools import partial
 import queue
 import main
+import inspect
 
 from pymupdf.mupdf import UCDN_SCRIPT_OLD_UYGHUR
 
@@ -169,40 +170,24 @@ class App:
     def create_table(self,tab,tables):
         objList = tables.data
         listOfList = []
+
+        columns = []
         print("objList",objList)
         # Destinguish ticket type & create columns accordingly
-        if "arbeitsplatzwechsel" in str(tables.name).lower():
-            columns = ["Kürzel", "Name", "Vorname", "Abteilung Vorher", "Abteilung Neu"]
-            for employee in objList:
-                templist = []
-                for item in employee.dir():
-                    try:
-                        templist.append(getattr(employee, item))
-                    except:
-                        templist.append("NotFound")
-                listOfList.append(templist)
+        for item in inspect.getmembers(objList[0]):
+            if not item[0].startswith('_'):
+                columns.append(item[0])
+                print("member:",item)
 
-        elif "neueintritt" in str(tables.name).lower():
-            columns = ["Kürzel", "Name", "Vorname", "Abteilung"]
-            for employee in objList:
-                templist = []
-                for item in employee.dir():
-                    try:
-                        templist.append(getattr(employee, item))
-                    except:
-                        templist.append("NotFound")
-                listOfList.append(templist)
+        for employee in objList:
+            templist = []
+            for item in columns:
+                try:
+                    templist.append(getattr(employee, item))
+                except:
+                    templist.append("NotFound")
+            listOfList.append(templist)
 
-        elif "neueintritte" in str(tables.name).lower():
-            columns = ["Kürzel", "Name", "Vorname", "Abteilung", "Platz-Nr."]
-            for employee in objList:
-                templist = []
-                for item in employee.dir():
-                    try:
-                        templist.append(getattr(employee, item))
-                    except:
-                        templist.append("NotFound")
-                listOfList.append(templist)
         # Create table
         tables.employee_table = ttk.Treeview(tab, columns=columns, show="headings", height=5)
         for item in columns:
@@ -219,7 +204,7 @@ class App:
         scrollbar.grid(row=2, column=2, sticky="ns", pady=5)
         # Insert table data into table
 
-        print("templist:",templist)
+        print("templist:",listOfList)
 
 
 
