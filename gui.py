@@ -44,6 +44,10 @@ class App:
         self.refresh_button.pack()
 
         self.tabControl = ttk.Notebook(self.master)
+        self.tabControl.pack(expand=1, fill="both")
+
+        self.status_label = tk.Label(self.master, text="Status: " + self.status)
+        self.status_label.pack()
 
     def init_tabs(self,tables):
         self.tabs = []
@@ -51,7 +55,7 @@ class App:
             tabRef = ttk.Frame(self.tabControl)
             self.tabs.append(tabRef)
 
-        for tab in self.tabs:
+        for i,tab in enumerate(self.tabs):
             self.tabControl.add(tab, text="werfjghk")
             confirm_wrapper = partial(self.make_sure,tab)
 
@@ -59,12 +63,10 @@ class App:
             tab.confirm_button = tk.Button(tab, text="Create Ticket", command=confirm_wrapper)
             tab.confirm_button.grid(row=3, column=0, columnspan=1, padx=5, pady=5, sticky="nsew")
             print("tab init:",tab)
+            self.create_table(tab,tables[i])
 
-            # Display current status
-            tab.status_label = tk.Label(tab, text="Status: " + self.status)
-            tab.status_label.grid(row=1, column=0, padx=5, pady=5, sticky="nsew")
 
-        self.tabControl.pack(expand=1, fill="both")
+
 
 
     # Handle confirm button click
@@ -124,6 +126,8 @@ class App:
         
         print("callbackmsg:",callback_queue.get())
 
+        self.init_tabs(self.tables)
+
         # Reavtivate buttons
         try:
             for x in self.tabs:
@@ -162,41 +166,60 @@ class App:
         self.make_sure_window.destroy()
 
     # Function to create the table
-    def create_table(self,tab):
-        templist = []
+    def create_table(self,tab,tables):
+        objList = tables.data
+        listOfList = []
+        print("objList",objList)
         # Destinguish ticket type & create columns accordingly
-        match self.ticketType:
-            case "arbeitsplatzwechsel":
-                tab.columns = ["Kürzel", "Name", "Vorname", "Abteilung Vorher", "Abteilung Neu"]
-                for employee in self.data:
-                    for item in tab.columns:
+        if "arbeitsplatzwechsel" in str(tables.name).lower():
+            columns = ["Kürzel", "Name", "Vorname", "Abteilung Vorher", "Abteilung Neu"]
+            for employee in objList:
+                templist = []
+                for item in columns:
+                    try:
                         templist.append(getattr(employee, item))
+                    except:
+                        templist.append("NotFound")
+                listOfList.append(templist)
 
-            case "neueintritt":
-                tab.columns = ["Kürzel", "Name", "Vorname", "Abteilung"]
-                for employee in self.data:
-                    for item in tab.columns:
+        elif "neueintritt" in str(tables.name).lower():
+            columns = ["Kürzel", "Name", "Vorname", "Abteilung"]
+            for employee in objList:
+                templist = []
+                for item in columns:
+                    try:
                         templist.append(getattr(employee, item))
+                    except:
+                        templist.append("NotFound")
+                listOfList.append(templist)
 
-            case "neueintritte":
-                tab.columns = ["Kürzel", "Name", "Vorname", "Abteilung", "Platz-Nr."]
-                for employee in self.data:
-                    for item in tab.columns:
+        elif "neueintritte" in str(tables.name).lower():
+            columns = ["Kürzel", "Name", "Vorname", "Abteilung", "Platz-Nr."]
+            for employee in objList:
+                templist = []
+                for item in columns:
+                    try:
                         templist.append(getattr(employee, item))
+                    except:
+                        templist.append("NotFound")
+                listOfList.append(templist)
         # Create table
-        tab.employee_table = ttk.Treeview(tab, columns=self.columns, show="headings", height=5)
-        for item in tab.columns:
-            tab.employee_table.heading(item, text=item)
-            tab.employee_table.column(item, anchor=tk.CENTER)
+        tables.employee_table = ttk.Treeview(tab, columns=columns, show="headings", height=5)
+        for item in columns:
+            tables.employee_table.heading(item, text=item)
+            tables.employee_table.column(item, anchor=tk.CENTER)
+        for lists in listOfList:
+            tables.employee_table.insert("", tk.END, values=lists)
 
         # Make scrollbar
-        scrollbar = ttk.Scrollbar(tab, orient="vertical", command=self.employee_table.yview)
-        tab.employee_table.configure(yscroll=scrollbar.set)
+        scrollbar = ttk.Scrollbar(tab, orient="vertical", command=tables.employee_table.yview)
+        tables.employee_table.configure(yscroll=scrollbar.set)
         # Place scrollbar and table
-        tab.employee_table.grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
+        tables.employee_table.grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
         scrollbar.grid(row=2, column=2, sticky="ns", pady=5)
         # Insert table data into table
-        tab.employee_table.insert("", tk.END, values=templist)
+
+        print("templist:",templist)
 
 
 
