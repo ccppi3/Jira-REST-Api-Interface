@@ -6,6 +6,7 @@ import tkinter as tk
 from tkinter import ttk
 import threading
 from functools import partial
+import queue
 
 from pymupdf.mupdf import UCDN_SCRIPT_OLD_UYGHUR
 
@@ -33,15 +34,18 @@ class App:
         self.ticketType = ticketType.lower()
         self.columns = ()
         self.status = ""
+        tabs = []
         # Create table widget with data
         #self.create_table()
 
+        self.refresh_button = tk.Button(self.master, text="Refresh", command=self.refresh_button_handler)
+        self.refresh_button.pack()
 
         self.tabControl = ttk.Notebook(self.master)
 
+    def init_tabs(self,tables):
         self.tabs = []
-
-        for i in range(3):
+        for i in tables:
             tabRef = ttk.Frame(self.tabControl)
             self.tabs.append(tabRef)
 
@@ -60,9 +64,6 @@ class App:
 
         self.tabControl.pack(expand=1, fill="both")
 
-        self.refresh_button = tk.Button(self.master, text="Refresh", command=lambda: self.refresh_button_handler(self.tabs[0]))
-        self.refresh_button.pack()
-
 
     # Handle confirm button click
     def confirm_button_handler(self,tab):
@@ -77,47 +78,55 @@ class App:
         self.loadingThread.start()
 
 
+    def callback_refresh_finished(self):
+        print("on_close called, thread finished")
     # Handle refresh button click
-    def refresh_button_handler(self, tab):
-        print("tab:",tab)
-        for x in self.tabs:
-            print("tabs:",x)
+    def refresh_button_handler(self):
         # Define threads
-        self.loadingThread = threading.Thread(target=self.loading, args=(tab,))
-        self.fetchThread = threading.Thread(target=self.test_thread)
-
-        # Start threads
-        self.fetchThread.start()
+        self.loadingThread = threading.Thread(target=self.loading,args=(self.test_thread,))
         self.loadingThread.start()
 
 
-    def test_thread(self):
+    def test_thread(self,callback_queue):
         for i in range(100):
             time.sleep(0.1)
+        callback_queue.put("Thread finished")
 
 
     # Loading function to diable buttons and display progressbar
-    def loading(self, tab):
+    def loading(self,threadFunction):
+        print("loading...")
         # Disable buttons
-        for x in self.tabs:
-            x.confirm_button.config(state=tk.DISABLED)
+        try:
+            for x in self.tabs:
+                x.confirm_button.config(state=tk.DISABLED)
+        except:
+            print("no tabs available")
+
         self.refresh_button.config(state=tk.DISABLED)
         # Display a loading bar
         self.status_bar = ttk.Progressbar(self.master, mode="indeterminate")
         #self.status_bar.grid(row=1, column=0, padx=5, pady=5, sticky="nsew")
         self.status_bar.pack()
         self.status_bar.start()
+        
 
-        # Wait until Thread is finished
-        try:
-            while self.fetchThread.is_alive() or self.postThread.is_alive():
-                time.sleep(0.1)
-        except:
-            pass
+        callback_queue = queue.Queue()
+         
+        self.childThread = threading.Thread(target=threadFunction,args=(callback_queue,))
+        self.childThread.start()
+
+        self.childThread.join() #wait for the child thread
+        
+        print("callbackmsg:",callback_queue.get())
 
         # Reavtivate buttons
-        for x in self.tabs:
-            x.confirm_button.config(state=tk.NORMAL)
+        try:
+            for x in self.tabs:
+                x.confirm_button.config(state=tk.NORMAL)
+        except:
+            print("no tabs avalaible")
+
         self.refresh_button.config(state=tk.NORMAL)
         # Remove loading bar
         self.status_bar.stop()
@@ -149,41 +158,41 @@ class App:
         self.make_sure_window.destroy()
 
     # Function to create the table
-    def create_table(self):
+    def create_table(self,tab):
         templist = []
         # Destinguish ticket type & create columns accordingly
         match self.ticketType:
             case "arbeitsplatzwechsel":
-                self.columns = ["Kürzel", "Name", "Vorname", "Abteilung Vorher", "Abteilung Neu"]
+                tab.columns = ["Kürzel", "Name", "Vorname", "Abteilung Vorher", "Abteilung Neu"]
                 for employee in self.data:
-                    for item in self.columns:
+                    for item in tab.columns:
                         templist.append(getattr(employee, item))
 
             case "neueintritt":
-                self.columns = ["Kürzel", "Name", "Vorname", "Abteilung"]
+                tab.columns = ["Kürzel", "Name", "Vorname", "Abteilung"]
                 for employee in self.data:
-                    for item in self.columns:
+                    for item in tab.columns:
                         templist.append(getattr(employee, item))
 
             case "neueintritte":
-                self.columns = ["Kürzel", "Name", "Vorname", "Abteilung", "Platz-Nr."]
+                tab.columns = ["Kürzel", "Name", "Vorname", "Abteilung", "Platz-Nr."]
                 for employee in self.data:
-                    for item in self.columns:
+                    for item in tab.columns:
                         templist.append(getattr(employee, item))
         # Create table
-        self.employee_table = ttk.Treeview(self.master, columns=self.columns, show="headings", height=5)
-        for item in self.columns:
-            self.employee_table.heading(item, text=item)
-            self.employee_table.column(item, anchor=tk.CENTER)
+        tab.employee_table = ttk.Treeview(tab, columns=self.columns, show="headings", height=5)
+        for item in tab.columns:
+            tab.employee_table.heading(item, text=item)
+            tab.employee_table.column(item, anchor=tk.CENTER)
 
         # Make scrollbar
-        scrollbar = ttk.Scrollbar(self.master, orient="vertical", command=self.employee_table.yview)
-        self.employee_table.configure(yscroll=scrollbar.set)
+        scrollbar = ttk.Scrollbar(tab, orient="vertical", command=self.employee_table.yview)
+        tab.employee_table.configure(yscroll=scrollbar.set)
         # Place scrollbar and table
-        self.employee_table.grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
+        tab.employee_table.grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
         scrollbar.grid(row=2, column=2, sticky="ns", pady=5)
         # Insert table data into table
-        self.employee_table.insert("", tk.END, values=templist)
+        tab.employee_table.insert("", tk.END, values=templist)
 
 
 
