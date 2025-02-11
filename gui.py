@@ -175,7 +175,7 @@ class App:
             columns = ["Kürzel", "Name", "Vorname", "Abteilung Vorher", "Abteilung Neu"]
             for employee in objList:
                 templist = []
-                for item in columns:
+                for item in employee.dir():
                     try:
                         templist.append(getattr(employee, item))
                     except:
@@ -186,7 +186,7 @@ class App:
             columns = ["Kürzel", "Name", "Vorname", "Abteilung"]
             for employee in objList:
                 templist = []
-                for item in columns:
+                for item in employee.dir():
                     try:
                         templist.append(getattr(employee, item))
                     except:
@@ -197,7 +197,7 @@ class App:
             columns = ["Kürzel", "Name", "Vorname", "Abteilung", "Platz-Nr."]
             for employee in objList:
                 templist = []
-                for item in columns:
+                for item in employee.dir():
                     try:
                         templist.append(getattr(employee, item))
                     except:
