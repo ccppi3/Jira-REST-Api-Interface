@@ -7,6 +7,7 @@ from tkinter import ttk
 import threading
 from functools import partial
 import queue
+import main
 
 from pymupdf.mupdf import UCDN_SCRIPT_OLD_UYGHUR
 
@@ -35,6 +36,7 @@ class App:
         self.columns = ()
         self.status = ""
         tabs = []
+        self.tables = [] #this contains list of table object with a list of entries
         # Create table widget with data
         #self.create_table()
 
@@ -77,21 +79,23 @@ class App:
         self.postThread.start()
         self.loadingThread.start()
 
-
-    def callback_refresh_finished(self):
-        print("on_close called, thread finished")
     # Handle refresh button click
     def refresh_button_handler(self):
         # Define threads
-        self.loadingThread = threading.Thread(target=self.loading,args=(self.test_thread,))
+        self.loadingThread = threading.Thread(target=self.loading,args=(self.fetch_thread,))
         self.loadingThread.start()
-
 
     def test_thread(self,callback_queue):
         for i in range(100):
             time.sleep(0.1)
         callback_queue.put("Thread finished")
-
+    def fetch_thread(self,callback_queue):
+        for ret in main.run():
+            if type(ret) == list:
+                self.tables = ret
+            else:
+                print("[main]",ret)
+        callback_queue.put("Thread finished")
 
     # Loading function to diable buttons and display progressbar
     def loading(self,threadFunction):
