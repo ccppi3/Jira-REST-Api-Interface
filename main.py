@@ -34,8 +34,8 @@ host = os.getenv('Host')
 user = os.getenv('Mail')
 port = os.getenv('Port') 
 
-pdf.setDebugLevel(err.INFO,_filter="")
-pop3.setDebugLevel(err.INFO)
+pdf.setDebugLevel(err.NONE,_filter="")
+pop3.setDebugLevel(err.NONE)
 def run():
     newAdded = []
     uidsMail = []
@@ -64,7 +64,14 @@ def run():
     
     printStatistics(uids,newAdded,newFileList)
     yield "Running PDFParser..."
-    tableDataList = _runPdfParser(newFileList)
+
+    tableDataList = []
+    for ret in _runPdfParser(newFileList):
+        if type(ret) == list:
+            tableDataList = ret
+        else:
+            yield ret
+
     yield "finished parsing"
     yield tableDataList
 
@@ -81,6 +88,7 @@ def _runPdfParser(newFileList): #helper function witch wraps all the parsing cal
         countPage = tables.countPages()
         for pageNr in range(countPage):
             log("Parse page ",pageNr," of file ",file,level=err.NONE)
+            yield "Parse:" + str(file).split("\\")[len(str(file).split("\\"))-1] + " Page " + str(pageNr)
             tables.selectPage(pageNr)
             listTable = tables.setTableNames(["Tabelle 1","NEUEINTRITT","Arbeitsplatzwechsel","NEUEINTRITTE"])
             for i,table in enumerate(listTable):
@@ -156,7 +164,7 @@ def _trimNewAdded(newAddedList):#get attachements, on double entries, choose the
 if __name__=="__main__":
     for ret in run():
         if type(ret) == list: #last yield returns the tableData
-            tablesToTicket(x)
+            tablesToTicket(ret)
         else:#return is status string
             print("[main]",ret)
         
