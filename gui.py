@@ -27,23 +27,37 @@ class App:
         self.master.resizable(False, False)
         self.master.title("Jira-Check")
         self.master.iconbitmap("jira.ico")
+        self.master.geometry("850x500")
         self.data = data
         self.ticketType = ticketType.lower()
         self.columns = ()
         self.status = ""
         # Create table widget with data
-        self.create_table()
+        #self.create_table()
 
-        # Buttons
-        self.confirm_button = tk.Button(self.master, text="Create Ticket", command=self.make_sure)
-        self.confirm_button.grid(row=3, column=0, columnspan=1, padx=5, pady=5, sticky="nsew")
+        self.tabControl = ttk.Notebook(self.master)
 
-        self.refresh_button = tk.Button(self.master, text="Refresh", command=self.refresh_button_handler)
-        self.refresh_button.grid(row=3, column=1, columnspan=2, padx=5, pady=5, sticky="nsew")
+        self.tabs = []
 
-        # Display current status
-        self.status_label = tk.Label(self.master, text="Status: " + self.status)
-        self.status_label.grid(row=1, column=0, padx=5, pady=5, sticky="nsew")
+        for i in range(3):
+            self.tabs.append(ttk.Frame(self.tabControl))
+
+        for tab in self.tabs:
+            self.tabControl.add(tab, text="werfjghk")
+
+            # Buttons
+            tab.confirm_button = tk.Button(tab, text="Create Ticket", command=self.make_sure)
+            tab.confirm_button.grid(row=3, column=0, columnspan=1, padx=5, pady=5, sticky="nsew")
+
+            tab.refresh_button = tk.Button(tab, text="Refresh", command=lambda: self.refresh_button_handler(tab))
+            tab.refresh_button.grid(row=3, column=1, columnspan=2, padx=5, pady=5, sticky="nsew")
+
+            # Display current status
+            tab.status_label = tk.Label(tab, text="Status: " + self.status)
+            tab.status_label.grid(row=1, column=0, padx=5, pady=5, sticky="nsew")
+
+        self.tabControl.pack(expand=1, fill="both")
+
 
     # Handle confirm button click
     def confirm_button_handler(self):
@@ -59,9 +73,9 @@ class App:
 
 
     # Handle refresh button click
-    def refresh_button_handler(self):
+    def refresh_button_handler(self, tab):
         # Define threads
-        self.loadingThread = threading.Thread(target=self.loading)
+        self.loadingThread = threading.Thread(target=self.loading, args=(tab,))
         self.fetchThread = threading.Thread(target=self.test_thread)
 
         # Start threads
@@ -75,14 +89,15 @@ class App:
 
 
     # Loading function to diable buttons and display progressbar
-    def loading(self):
-        # Display a loading bar
-        self.status_bar = ttk.Progressbar(mode="indeterminate")
-        self.status_bar.grid(row=1, column=1, columnspan=1, padx=5, pady=5, sticky="nsew")
-        self.status_bar.start()
+    def loading(self, tab):
         # Disable buttons
-        self.confirm_button.config(state=tk.DISABLED)
-        self.refresh_button.config(state=tk.DISABLED)
+        tab.confirm_button.config(state=tk.DISABLED)
+        tab.refresh_button.config(state=tk.DISABLED)
+        # Display a loading bar
+        tab.status_bar = ttk.Progressbar(tab, mode="indeterminate")
+        tab.status_bar.grid(row=1, column=0, padx=5, pady=5, sticky="nsew")
+        tab.status_bar.start()
+
         # Wait until Thread is finished
         try:
             while self.fetchThread.is_alive() or self.postThread.is_alive():
@@ -90,13 +105,12 @@ class App:
         except:
             pass
 
-
         # Reavtivate buttons
-        self.confirm_button.config(state=tk.NORMAL)
-        self.refresh_button.config(state=tk.NORMAL)
+        tab.confirm_button.config(state=tk.NORMAL)
+        tab.refresh_button.config(state=tk.NORMAL)
         # Remove loading bar
-        self.status_bar.stop()
-        self.status_bar.destroy()
+        tab.status_bar.stop()
+        tab.status_bar.destroy()
 
     # Confirm Winow
     def make_sure(self):
@@ -145,7 +159,7 @@ class App:
                     for item in self.columns:
                         templist.append(getattr(employee, item))
         # Create table
-        self.employee_table = ttk.Treeview(self.master, columns=self.columns, show="headings", height=10)
+        self.employee_table = ttk.Treeview(self.master, columns=self.columns, show="headings", height=5)
         for item in self.columns:
             self.employee_table.heading(item, text=item)
             self.employee_table.column(item, anchor=tk.CENTER)
@@ -158,6 +172,7 @@ class App:
         scrollbar.grid(row=2, column=2, sticky="ns", pady=5)
         # Insert table data into table
         self.employee_table.insert("", tk.END, values=templist)
+
 
 
 if __name__ == "__main__":
