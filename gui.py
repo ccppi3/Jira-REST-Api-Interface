@@ -52,21 +52,25 @@ class App:
 
     def init_tabs(self,tables):
         self.tabs = []
-        for i in tables:
-            tabRef = ttk.Frame(self.tabControl)
-            self.tabs.append(tabRef)
+        for i,table in enumerate(tables):
+            print("type table.data:",type(table.data))
+            print("len vars:",len(vars(tables[i].data[0])))
+            if len(tables[i].data) > 0 and len(vars(tables[i].data[0]))>0:
+
+                print("len of data:",len(table.data))
+                tabRef = ttk.Frame(self.tabControl)
+                self.tabs.append(tabRef)
 
         for i,tab in enumerate(self.tabs):
-            self.tabControl.add(tab, text="werfjghk")
-            confirm_wrapper = partial(self.make_sure,tab)
+            #check if table is empty if not create a table inside the tab
+            if len(tables[i].data) > 0 and len(vars(tables[i].data[0]))>0:
+                self.tabControl.add(tab, text=str(tables[i].name))
+                confirm_wrapper = partial(self.make_sure,tab)
 
-            # Buttons
-            tab.confirm_button = tk.Button(tab, text="Create Ticket", command=confirm_wrapper)
-            tab.confirm_button.grid(row=3, column=0, columnspan=1, padx=5, pady=5, sticky="nsew")
-            print("tab init:",tab)
-            self.create_table(tab,tables[i])
-
-
+                # Buttons
+                tab.confirm_button = tk.Button(tab, text="Create Ticket", command=confirm_wrapper)
+                tab.confirm_button.grid(row=3, column=0, columnspan=1, padx=5, pady=5, sticky="nsew")
+                self.create_table(tab,tables[i])
 
 
 
@@ -172,12 +176,11 @@ class App:
         listOfList = []
 
         columns = []
-        print("objList",objList)
-        # Destinguish ticket type & create columns accordingly
         for item in inspect.getmembers(objList[0]):
+            print("allMembers:",item)
             if not item[0].startswith('_'):
                 columns.append(item[0])
-                print("member:",item)
+                print("member to append:",item)
 
         for employee in objList:
             templist = []
