@@ -35,6 +35,7 @@ class App:
         # Create table widget with data
         #self.create_table()
 
+
         self.tabControl = ttk.Notebook(self.master)
 
         self.tabs = []
