@@ -5,6 +5,7 @@ import time
 import tkinter as tk
 from tkinter import ttk
 import threading
+from functools import partial
 
 from pymupdf.mupdf import UCDN_SCRIPT_OLD_UYGHUR
 
@@ -41,17 +42,17 @@ class App:
         self.tabs = []
 
         for i in range(3):
-            self.tabs.append(ttk.Frame(self.tabControl))
+            tabRef = ttk.Frame(self.tabControl)
+            self.tabs.append(tabRef)
 
         for tab in self.tabs:
             self.tabControl.add(tab, text="werfjghk")
+            confirm_wrapper = partial(self.make_sure,tab)
 
             # Buttons
-            tab.confirm_button = tk.Button(tab, text="Create Ticket", command=self.make_sure)
+            tab.confirm_button = tk.Button(tab, text="Create Ticket", command=confirm_wrapper)
             tab.confirm_button.grid(row=3, column=0, columnspan=1, padx=5, pady=5, sticky="nsew")
-
-            tab.refresh_button = tk.Button(tab, text="Refresh", command=lambda: self.refresh_button_handler(tab))
-            tab.refresh_button.grid(row=3, column=1, columnspan=2, padx=5, pady=5, sticky="nsew")
+            print("tab init:",tab)
 
             # Display current status
             tab.status_label = tk.Label(tab, text="Status: " + self.status)
@@ -59,9 +60,12 @@ class App:
 
         self.tabControl.pack(expand=1, fill="both")
 
+        self.refresh_button = tk.Button(self.master, text="Refresh", command=lambda: self.refresh_button_handler(self.tabs[0]))
+        self.refresh_button.pack()
+
 
     # Handle confirm button click
-    def confirm_button_handler(self):
+    def confirm_button_handler(self,tab):
         # Close confirm window
         self.make_sure_window.destroy()
         # Define threads
@@ -75,6 +79,9 @@ class App:
 
     # Handle refresh button click
     def refresh_button_handler(self, tab):
+        print("tab:",tab)
+        for x in self.tabs:
+            print("tabs:",x)
         # Define threads
         self.loadingThread = threading.Thread(target=self.loading, args=(tab,))
         self.fetchThread = threading.Thread(target=self.test_thread)
@@ -92,12 +99,14 @@ class App:
     # Loading function to diable buttons and display progressbar
     def loading(self, tab):
         # Disable buttons
-        tab.confirm_button.config(state=tk.DISABLED)
-        tab.refresh_button.config(state=tk.DISABLED)
+        for x in self.tabs:
+            x.confirm_button.config(state=tk.DISABLED)
+        self.refresh_button.config(state=tk.DISABLED)
         # Display a loading bar
-        tab.status_bar = ttk.Progressbar(tab, mode="indeterminate")
-        tab.status_bar.grid(row=1, column=0, padx=5, pady=5, sticky="nsew")
-        tab.status_bar.start()
+        self.status_bar = ttk.Progressbar(self.master, mode="indeterminate")
+        #self.status_bar.grid(row=1, column=0, padx=5, pady=5, sticky="nsew")
+        self.status_bar.pack()
+        self.status_bar.start()
 
         # Wait until Thread is finished
         try:
@@ -107,14 +116,15 @@ class App:
             pass
 
         # Reavtivate buttons
-        tab.confirm_button.config(state=tk.NORMAL)
-        tab.refresh_button.config(state=tk.NORMAL)
+        for x in self.tabs:
+            x.confirm_button.config(state=tk.NORMAL)
+        self.refresh_button.config(state=tk.NORMAL)
         # Remove loading bar
-        tab.status_bar.stop()
-        tab.status_bar.destroy()
+        self.status_bar.stop()
+        self.status_bar.destroy()
 
     # Confirm Winow
-    def make_sure(self):
+    def make_sure(self,tab):
         # Create window
         self.make_sure_window = tk.Toplevel(self.master)
         self.make_sure_window.title("Are you sure? ")
@@ -127,7 +137,8 @@ class App:
         self.make_sure_label.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
 
         # Confirm button
-        yes_button = tk.Button(self.make_sure_window, text="Yes", command=self.confirm_button_handler)
+        confirm_wrapper = partial(self.confirm_button_handler,tab)
+        yes_button = tk.Button(self.make_sure_window, text="Yes", command=confirm_wrapper)
         yes_button.grid(row=1, column=0, columnspan=1, padx=5, pady=5, sticky="nsew")
         # Cancel button
         cancel_button = tk.Button(self.make_sure_window, text="Cancel", command=self.cancel)

@@ -97,8 +97,11 @@ class Ticket:
             case "arbeitsplatzwechsel":
                 self.tableHeaders = ["Kürzel", "Name", "Vorname", "Abteilung Vorher", "Abteilung Neu"]
                 for objct in self.data:
+                    valueAbtNeu = getattr(objct,"Abteilung neu","")
+                    if valueAbtNeu.strip() == "":
+                        valueAbtNeu = getattr(objct,"Abteilung Neu","")
                     try:
-                        self.tableRows.append([objct.Kürzel, objct.Name, objct.Vorname, getattr(objct, "Abteilung vorher", ""), getattr(objct, "Abteilung neu", "")])
+                        self.tableRows.append([objct.Kürzel, objct.Name, objct.Vorname, getattr(objct, "Abteilung vorher", ""),valueAbtNeu])
                     except:
                         print("there are missing object attributes, assume the list is empty so cancel")
                         return 1

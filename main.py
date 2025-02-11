@@ -34,8 +34,8 @@ host = os.getenv('Host')
 user = os.getenv('Mail')
 port = os.getenv('Port') 
 
-pdf.setDebugLevel(err.NONE,_filter="")
-pop3.setDebugLevel(err.NONE)
+pdf.setDebugLevel(err.ULTRA,_filter="")
+pop3.setDebugLevel(err.ULTRA)
 def run():
     newAdded = []
     uidsMail = []
@@ -101,10 +101,12 @@ def _runPdfParser(newFileList): #helper function witch wraps all the parsing cal
                     objcpy = copy.deepcopy(tbl) # make a real copy of the data, else the data would be overwritten by the next page, as the data would be parsed as reference
                     objList.append(objcpy)
                 tableDataList.append(TableData(table.name,objList,table.fileName,table.pageNumber,file.creationDate))
-    return tableDataList
+    yield tableDataList
 
 def tablesToTicket(tableDataList): #tackes the tabledata and creates a ticket for each table
+    log("count tables: ",len(tableDataList),level=err.INFO)
     for table in tableDataList:
+        log("table: ",table,level=err.INFO)
         filenameList = str(table.fileName).split("\\")
         filename = filenameList[len(filenameList)-1]
         print("--------¦",table.name,"¦-------------¦","filename: ",filename, "pageNr:", table.pageNumber,"Date: ",table.creationDate)
@@ -164,6 +166,7 @@ def _trimNewAdded(newAddedList):#get attachements, on double entries, choose the
 if __name__=="__main__":
     for ret in run():
         if type(ret) == list: #last yield returns the tableData
+            print("is list run ticket")
             tablesToTicket(ret)
         else:#return is status string
             print("[main]",ret)
