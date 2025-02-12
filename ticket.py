@@ -44,15 +44,6 @@ def generateRow(_list):
         
     
 
-class TableData:
-    def __init__(self,name,data,fileName,pageNumber,creationDate):
-        self.name = name
-        self.data = data
-        self.fileName = fileName
-        self.pageNumber = pageNumber
-        self.creationDate = creationDate
-
-
 class Ticket:
     def __init__(self,table, data, file_name, company, ticketType):
         # Api info
@@ -196,34 +187,3 @@ class Ticket:
                     }
                 )
         print("Response 1: ", response)
-        
-
-
-
-
-if __name__=="__main__":
-
-    tables = pdf.Tables("Arbeitsplatzeinteilung KW 04 20.01.2025.pdf")
-    pdf.setDebugLevel(err.ERROR)
-    tables.selectPage(0)
-    listTable = tables.setTableNames(["Tabelle 1", "Arbeitsplatzwechsel", "NEUEINTRITT","NEUEINTRITTE"])
-    tableDataList = []
-
-    for table in listTable:
-        tables.selectTableByObj(table)
-        tables.defRows(["Vorname","Name","Kürzel","Abteilung vorher","Abteilung neu","Platz-Nr","Abteilung"])
-        tables.parseTable()
-        objList = []
-        obj_list = tables.getObjectsFromTable()
-        for obj in obj_list:
-            objcpy = copy.deepcopy(obj)
-            objList.append(objcpy)
-
-        tableDataList.append(TableData(table.name, objList, table.fileName, table.pageNumber, "04-03-2020"))
-        print(table.name)
-
-
-
-        ticket = Ticket(table,objList, "Arbeitsplatzeinteilung KW 04 20.01.2025.pdf", "ALLPOWER", "Neueintritt")
-        if ticket.create_ticket() == 1:
-            print("ticket creation aborted")
