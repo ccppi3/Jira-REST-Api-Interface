@@ -9,6 +9,8 @@ from functools import partial
 import queue
 import main
 import inspect
+from pop3 import log,err
+import pop3
 
 from pymupdf.mupdf import UCDN_SCRIPT_OLD_UYGHUR
 
@@ -28,7 +30,7 @@ class App:
     def __init__(self, master, data, ticketType):
         # Initialize variables
         self.master = master
-        self.master.resizable(False, False)
+        #self.master.resizable(False, False)
         self.master.title("Jira-Check")
         self.master.iconbitmap("jira.ico")
         self.master.geometry("850x500")
@@ -52,6 +54,7 @@ class App:
 
     def init_tabs(self,tables):
         self.tabs = []
+        self.tables = []
         for i,table in enumerate(tables):
             print("type table.data:",type(table.data))
             print("len vars:",len(vars(tables[i].data[0])))
@@ -78,7 +81,7 @@ class App:
     def confirm_button_handler(self,tab):
         # Close confirm window
         self.make_sure_window.destroy()
-        self.loadingThread = threading.Thread(target=self.loading,args=(self.post_thread,tab.table))
+        self.loadingThread = threading.Thread(target=self.loading,args=(self.post_thread,tab))
         self.loadingThread.start()
 
     # Handle refresh button click
@@ -86,9 +89,17 @@ class App:
         self.loadingThread = threading.Thread(target=self.loading,args=(self.fetch_thread,None))
         self.loadingThread.start()
 
-    def post_thread(self,callback_queue,table):
-        main.tableToTicket(table)
-        callback_queue.put("Post Thread finished")
+    def post_thread(self,callback_queue,tab):
+        status = main.tableToTicket(tab.table)
+        if type(status) == str:
+            if status == "canceled":
+                log("User aborted sending",level=err.INFO)
+            callback_queue.put("Post Thread finished")
+        else:
+            
+            callback_queue.put("destroy")
+
+
 
     def fetch_thread(self,callback_queue,dummy):
         for ret in main.run():
@@ -99,14 +110,11 @@ class App:
         callback_queue.put("fetch Thread finished")
 
     # Loading function to diable buttons and display progressbar
-    def loading(self,threadFunction,table):
+    def loading(self,threadFunction,tab):
         print("loading...")
         # Disable buttons
-        try:
-            for x in self.tabs:
-                x.confirm_button.config(state=tk.DISABLED)
-        except:
-            print("no tabs available")
+        if tab:
+            tab.confirm_button.config(state=tk.DISABLED)
 
         self.refresh_button.config(state=tk.DISABLED)
         # Display a loading bar
@@ -117,19 +125,18 @@ class App:
 
         callback_queue = queue.Queue()
          
-        self.childThread = threading.Thread(target=threadFunction,args=(callback_queue,table))
+        self.childThread = threading.Thread(target=threadFunction,args=(callback_queue,tab))
         self.childThread.start()
         self.childThread.join() #wait for the child thread
-        
-        print("callbackmsg:",callback_queue.get())
+        msg = callback_queue.get() 
+        print("callbackmsg:",msg)
 
         self.init_tabs(self.tables)
         # Reavtivate buttons
-        try:
-            for x in self.tabs:
-                x.confirm_button.config(state=tk.NORMAL)
-        except:
-            print("no tabs avalaible")
+        if tab:
+            tab.confirm_button.config(state=tk.NORMAL)
+        if msg == "destroy":
+            tab.destroy()
 
         self.refresh_button.config(state=tk.NORMAL)
         # Remove loading bar
@@ -138,6 +145,9 @@ class App:
 
     # Confirm Winow
     def make_sure(self,tab):
+        self.refresh_button.config(state=tk.DISABLED)
+        if tab:
+            tab.confirm_button.config(state=tk.DISABLED)
         # Create window
         self.make_sure_window = tk.Toplevel(self.master)
         self.make_sure_window.title("Are you sure? ")

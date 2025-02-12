@@ -113,9 +113,9 @@ class Ticket:
         templateTable = {
                     "type": "table",
                     "attrs": {
-                        "isNumberColumnEnabled": "false",
+                        "isNumberColumnEnabled": False,
                         "layout": "center",
-                        "width": "900",
+                        "width": 900,
                         "displayMode": "default"
                     },
                     "content": [
@@ -140,12 +140,12 @@ class Ticket:
         payload["fields"]["labels"] = self.label if self.label else []
 
         
-        print("before dump:",payload)
-        try:
-            payload2 = json.dumps(payload)
-        except:
-            log("error payload type:",type(payload),"\n content:",payload,level=err.ERROR)
-            print(payload)
+        #try:
+        payload2 = json.dumps(payload)
+        print("payload2 dump:",payload2)
+        #except:
+        #log("error payload type:",type(payload),"\n content:",payload,level=err.ERROR)
+        print("payload:",payload)
         return payload2
 
 
@@ -172,9 +172,11 @@ class Ticket:
             self.sendAttachment(url)
             print("Response 1: ", response)
             print(response.text)
-            print("Response 2: ", response2)
+            return response.status_code
         else:
             print("abort")
+            return "canceled"
+        
 
     def sendAttachment(self,ticketUrl):
         ticketUrl = ticketUrl + "/attachments"
