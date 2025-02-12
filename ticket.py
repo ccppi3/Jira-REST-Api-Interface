@@ -134,7 +134,8 @@ class Ticket:
             template_data = json.load(file)
         payload = template_data
         print("type template:",type(template_data),"before edit:",json.dumps(template_data))
-
+        if self.company.lower() == "allpower":
+            payload["fields"]["project"]["key"] = "LZBAPW"
         payload["fields"]["description"]["content"].append(self.table)
         payload["fields"]["summary"] = self.summary
         payload["fields"]["labels"] = self.label if self.label else []
