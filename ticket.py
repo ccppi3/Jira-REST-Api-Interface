@@ -130,7 +130,6 @@ class Ticket:
         payload["fields"]["description"]["content"].append(self.table)
         payload["fields"]["summary"] = self.summary
         payload["fields"]["labels"] = self.label if self.label else []
-
         
         #try:
         payload2 = json.dumps(payload)
@@ -139,8 +138,6 @@ class Ticket:
         #log("error payload type:",type(payload),"\n content:",payload,level=err.ERROR)
         print("payload:",payload)
         return payload2
-
-
 
     # Send payload to Jira Api --> Ticket creation
     def create_ticket(self,check = True):

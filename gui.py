@@ -99,13 +99,12 @@ class App:
             
             callback_queue.put("destroy")
 
-
-
     def fetch_thread(self,callback_queue,dummy):
         for ret in main.run():
             if type(ret) == list:
                 self.tables = ret
             else:
+                self.status_label.config(text = "Status: " + str(ret))
                 print("[main]",ret)
         callback_queue.put("fetch Thread finished")
 
