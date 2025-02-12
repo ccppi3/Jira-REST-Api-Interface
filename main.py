@@ -103,7 +103,7 @@ def _runPdfParser(newFileList): #helper function witch wraps all the parsing cal
                 tableDataList.append(TableData(table.name,objList,table.fileName,table.pageNumber,file.creationDate))
     yield tableDataList
 
-def tablesToTicket(tableDataList): #tackes the tabledata and creates a ticket for each table
+def tablesToTicket(tableDataList,check=True): #tackes the tabledata and creates a ticket for each table
     log("count tables: ",len(tableDataList),level=err.INFO)
     for table in tableDataList:
         log("table: ",table,level=err.INFO)
@@ -121,7 +121,26 @@ def tablesToTicket(tableDataList): #tackes the tabledata and creates a ticket fo
             ticketTable = ticket.Ticket(table,tempObjs,filename,"Allpower","neueintritt")
         elif "neueintritt" in str(table.name).lower():
             ticketTable = ticket.Ticket(table,tempObjs,filename,"Allpower","neueintritte")
-        ticketTable.create_ticket()
+        ticketTable.create_ticket(check=True)
+
+def tableToTicket(table,check=True):
+        log("table: ",table,level=err.INFO)
+        filenameList = str(table.fileName).split("\\")
+        filename = filenameList[len(filenameList)-1]
+        print("--------¦",table.name,"¦-------------¦","filename: ",filename, "pageNr:", table.pageNumber,"Date: ",table.creationDate)
+        tempObjs = []
+        for entry in table.data:
+            print(entry)
+            tempObjs.append(entry)
+        print("-------------------------------------\n")
+        if "arbeitsplatzwechsel" in str(table.name).lower():
+            ticketTable = ticket.Ticket(table,tempObjs,filename,"Allpower","arbeitsplatzwechsel")
+        elif "neueintritte" in str(table.name).lower():
+            ticketTable = ticket.Ticket(table,tempObjs,filename,"Allpower","neueintritt")
+        elif "neueintritt" in str(table.name).lower():
+            ticketTable = ticket.Ticket(table,tempObjs,filename,"Allpower","neueintritte")
+        ticketTable.create_ticket(check)
+    
 
 def _removeDoubles(newFileList):
     toBeRemoved = []

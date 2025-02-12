@@ -1,7 +1,7 @@
 {
 "fields": {
 	"description": {
-		"version": 1,
+		"version": "1",
 		"type": "doc",
 		"content": [
 		]},
@@ -22,5 +22,5 @@
 	},
 	"summary": ""
 	},
-"update": {}
+	"update": {}
 }

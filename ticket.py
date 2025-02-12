@@ -9,11 +9,13 @@ import json
 import pdf
 from pop3 import err as err
 import copy
+import inspect
+import pop3
+from pop3 import log,err
 
 
 # load .env file
 load_dotenv()
-DONOTSEND = False
 
 def generateRow(_list):
     header = {
@@ -71,7 +73,6 @@ class Ticket:
         self.id = ""
         self.table = ""
         self.company = company
-        self.tableHeaders = []
         self.tableRows = []
 
         # Check if input is empty
@@ -93,49 +94,34 @@ class Ticket:
     def format_data(self):
         self.tableRows = []
 
-        match self.ticketType:
-            case "arbeitsplatzwechsel":
-                self.tableHeaders = ["Kürzel", "Name", "Vorname", "Abteilung Vorher", "Abteilung Neu"]
-                for objct in self.data:
-                    valueAbtNeu = getattr(objct,"Abteilung neu","")
-                    if valueAbtNeu.strip() == "":
-                        valueAbtNeu = getattr(objct,"Abteilung Neu","")
-                    try:
-                        self.tableRows.append([objct.Kürzel, objct.Name, objct.Vorname, getattr(objct, "Abteilung vorher", ""),valueAbtNeu])
-                    except:
-                        print("there are missing object attributes, assume the list is empty so cancel")
-                        return 1
+        tableHeaders = []
+        for item in inspect.getmembers(self.data[0]):
+            if not item[0].startswith('_'):
+                tableHeaders.append(str(item[0]))
+                log("append header member:",item,level=err.INFO)
 
-            case "neueintritt":
-                self.tableHeaders = ["Kürzel", "Name", "Vorname", "Abteilung / Platz-Nr."]
-                for objct in self.data:
-                    try:
-                        self.tableRows.append([objct.Kürzel, objct.Name, objct.Vorname, objct.Abteilung])
-                    except:
-                        print("there are missing object attributes, assume the list is empty so cancel")
-                        return 1
-
-            case "neueintritte":
-                self.tableHeaders = ["Kürzel", "Name", "Vorname", "Abteilung", "Platz-Nr."]
-                for objct in self.data:
-                    try:
-                        self.tableRows.append([objct.Kürzel, objct.Name, objct.Vorname, objct.Abteilung, getattr(objct, "Platz-Nr.", "")])
-                    except:
-                        print("there are missing object attributes, assume the list is empty so cancel")
-                        return 1
+        for objct in self.data:
+            templist = []
+            for item in tableHeaders:
+                try:
+                    templist.append(getattr(objct,item))
+                except:
+                    print("there are missing object attributes, assume the list is empty so cancel")
+                    return 1
+            self.tableRows.append(templist)
 
         templateTable = {
                     "type": "table",
                     "attrs": {
-                        "isNumberColumnEnabled": False,
+                        "isNumberColumnEnabled": "false",
                         "layout": "center",
-                        "width": 900,
+                        "width": "900",
                         "displayMode": "default"
                     },
                     "content": [
                         ]
                     }
-        templateTable["content"].append(generateRow(self.tableHeaders))
+        templateTable["content"].append(generateRow(tableHeaders))
         for row in self.tableRows:
             templateTable["content"].append(generateRow(row))
         self.table = templateTable
@@ -146,56 +132,49 @@ class Ticket:
     def create_payload(self):
         with open("TemplatePayload.json", "r") as file:
             template_data = json.load(file)
-            payload = template_data
-            print("before edit:",json.dumps(template_data,separators = (", "," : ")))
+        payload = template_data
+        print("type template:",type(template_data),"before edit:",json.dumps(template_data))
 
-            payload["fields"]["description"]["content"].append(self.table)
-            payload["fields"]["summary"] = self.summary
-            payload["fields"]["labels"] = self.label if self.label else []
+        payload["fields"]["description"]["content"].append(self.table)
+        payload["fields"]["summary"] = self.summary
+        payload["fields"]["labels"] = self.label if self.label else []
 
         
         print("before dump:",payload)
-        payload2 = json.dumps(payload)
-        print(payload2)
+        try:
+            payload2 = json.dumps(payload)
+        except:
+            log("error payload type:",type(payload),"\n content:",payload,level=err.ERROR)
+            print(payload)
         return payload2
 
 
 
     # Send payload to Jira Api --> Ticket creation
-    def create_ticket(self):
+    def create_ticket(self,check = True):
         if self.format_data() == 1:
             print("create_ticket abort")
             return 1
         payload = self.create_payload()
         # Create ticket
         print("SUMMARY: ", self.summary)
-        print()
-        if DONOTSEND == False:
-            print("sending...")
-            yes = input("really create ticket? insert (yes):")
-            if yes == "yes":
-                response = requests.post(self.url, data=payload, headers=self.headers, auth=self.auth)
-                print(response.status_code)
-                print(response.text)
-                self.id = response.json()["id"]
-                url = response.json()["self"]
-                self.sendAttachment(url)
-            else:
-                print("abort")
-        else:
-            print("not sending, to not spam Jira while not in production")
 
-        # Attach PDF to ticket
-        #if DONOTSEND == False:
-         #   response2 = requests.post(
-         #       self.url + self.id + "attachements",
-         #       headers=self.headers,
-         #       auth=self.auth,
-         #       files={"file": (self.file_name, open(self.file_name, "rb"), "application-type")}
-          #  )
+        if check == True:
+            yes = input("really create ticket? insert (yes):")
+        else:
+            yes = ""
+        if yes == "yes" or check == False:
+            response = requests.post(self.url, data=payload, headers=self.headers, auth=self.auth)
+            print(response.status_code)
+            print(response.text)
+            self.id = response.json()["id"]
+            url = response.json()["self"]
+            self.sendAttachment(url)
             print("Response 1: ", response)
             print(response.text)
             print("Response 2: ", response2)
+        else:
+            print("abort")
 
     def sendAttachment(self,ticketUrl):
         ticketUrl = ticketUrl + "/attachments"

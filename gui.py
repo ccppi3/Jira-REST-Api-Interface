@@ -59,6 +59,7 @@ class App:
 
                 print("len of data:",len(table.data))
                 tabRef = ttk.Frame(self.tabControl)
+                tabRef.table = table
                 self.tabs.append(tabRef)
 
         for i,tab in enumerate(self.tabs):
@@ -73,39 +74,32 @@ class App:
                 self.create_table(tab,tables[i])
 
 
-
     # Handle confirm button click
     def confirm_button_handler(self,tab):
         # Close confirm window
         self.make_sure_window.destroy()
-        # Define threads
-        self.loadingThread = threading.Thread(target=self.loading)
-        self.postThread = threading.Thread(target=self.test_thread)
-
-        # Start Threads
-        self.postThread.start()
+        self.loadingThread = threading.Thread(target=self.loading,args=(self.post_thread,tab.table))
         self.loadingThread.start()
 
     # Handle refresh button click
     def refresh_button_handler(self):
-        # Define threads
-        self.loadingThread = threading.Thread(target=self.loading,args=(self.fetch_thread,))
+        self.loadingThread = threading.Thread(target=self.loading,args=(self.fetch_thread,None))
         self.loadingThread.start()
 
-    def test_thread(self,callback_queue):
-        for i in range(100):
-            time.sleep(0.1)
-        callback_queue.put("Thread finished")
-    def fetch_thread(self,callback_queue):
+    def post_thread(self,callback_queue,table):
+        main.tableToTicket(table)
+        callback_queue.put("Post Thread finished")
+
+    def fetch_thread(self,callback_queue,dummy):
         for ret in main.run():
             if type(ret) == list:
                 self.tables = ret
             else:
                 print("[main]",ret)
-        callback_queue.put("Thread finished")
+        callback_queue.put("fetch Thread finished")
 
     # Loading function to diable buttons and display progressbar
-    def loading(self,threadFunction):
+    def loading(self,threadFunction,table):
         print("loading...")
         # Disable buttons
         try:
@@ -120,19 +114,16 @@ class App:
         #self.status_bar.grid(row=1, column=0, padx=5, pady=5, sticky="nsew")
         self.status_bar.pack()
         self.status_bar.start()
-        
 
         callback_queue = queue.Queue()
          
-        self.childThread = threading.Thread(target=threadFunction,args=(callback_queue,))
+        self.childThread = threading.Thread(target=threadFunction,args=(callback_queue,table))
         self.childThread.start()
-
         self.childThread.join() #wait for the child thread
         
         print("callbackmsg:",callback_queue.get())
 
         self.init_tabs(self.tables)
-
         # Reavtivate buttons
         try:
             for x in self.tabs:
