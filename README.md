@@ -139,7 +139,8 @@ This takes the list and synchronises with the db, if a new entry is found it wil
 
 # Building (transpiling)
 ## Build dependency
-
+To install msvc do:
+>winget install Microsoft.VisualStudio.2022.BuildTools --force --override "--wait --passive --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.Windows11SDK.22621"
 
 To build you need make installed. to do so i recommend installing choco which is a package manager for windows.
 When choco installed just do:
