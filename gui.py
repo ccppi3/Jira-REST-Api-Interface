@@ -90,14 +90,14 @@ class App:
         self.loadingThread.start()
 
     def post_thread(self,callback_queue,tab):
-        status = main.tableToTicket(tab.table)
-        if type(status) == str:
-            if status == "canceled":
-                log("User aborted sending",level=err.INFO)
-            callback_queue.put("Post Thread finished")
-        else:
-            
-            callback_queue.put("destroy")
+        for status in main.tableToTicket(tab.table):
+            if type(status) == str:
+                self.status_label.config(text = "Status: " + str(status))
+                if status == "canceled":
+                    log("User aborted sending",level=err.INFO)
+                    callback_queue.put("Post Thread finished")
+            else: #when returns type is intiger we have finised
+                callback_queue.put("destroy")
 
     def fetch_thread(self,callback_queue,dummy):
         for ret in main.run():
@@ -174,7 +174,6 @@ class App:
     def create_table(self,tab,tables):
         objList = tables.data
         listOfList = []
-
         columns = []
         for item in inspect.getmembers(objList[0]):
             print("allMembers:",item)

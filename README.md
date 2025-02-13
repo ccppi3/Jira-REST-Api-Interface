@@ -137,7 +137,24 @@ This takes the list and synchronises with the db, if a new entry is found it wil
 
 > returns list of new uids
 
+# Building (transpiling)
+## Build dependency
 
 
+To build you need make installed. to do so i recommend installing choco which is a package manager for windows.
+When choco installed just do:
+> choco install make
+
+We need to provide Nuitka(the transpiler in the background) a c compiler, on windows we have to use msvc which is slow but the only way at the moment, there are other options:  
+https://nuitka.net/user-documentation/user-manual.html#nuitka-requirements
 
 
+## How to build
+
+Jut enter:
+> make
+
+this will run the makefile and the build process. Be aware that the transpiling process of all the dependencies takes a LOOOT of time.  
+This is due to Nuitka is a python program which can only use one cpu core as the python multithreading is not "real" multithreading.
+
+If it fails it is most likely due to the compiller not installed(msvc) or misconfigured.

@@ -48,8 +48,8 @@ class Ticket:
     def __init__(self,table, data, file_name, company, ticketType):
         # Api info
         self.tableObj = table
-        self.url = "https://santis.atlassian.net/rest/api/3/issue"
-        self.email = "jonathan.wyss@santismail.ch"
+        self.url = os.getenv('IssueUrl')
+        self.email = os.getenv('EMail')
         self.token = os.getenv("TOKEN")
         # Auth
         self.auth = HTTPBasicAuth(self.email, self.token)
@@ -84,7 +84,6 @@ class Ticket:
     # Format data in a way to use the payload template easily
     def format_data(self):
         self.tableRows = []
-
         tableHeaders = []
         for item in inspect.getmembers(self.data[0]):
             if not item[0].startswith('_'):
@@ -130,10 +129,10 @@ class Ticket:
         payload["fields"]["description"]["content"].append(self.table)
         payload["fields"]["summary"] = self.summary
         payload["fields"]["labels"] = self.label if self.label else []
-        if self.ticketType == "arbeitsplatzwechsel":
-            payload["fields"]["customfield_10202"] = "Onboard new Employee"
-        else:
-            payload["fields"]["customfield_10202"] = "Workplace change"
+        #if self.ticketType == "arbeitsplatzwechsel":
+        #    payload["fields"]["customfield_10010"] = "Onboard new Employee"
+        #else:
+        #    payload["fields"]["customfield_10010"] = "Workplace change"
         
         #try:
         payload2 = json.dumps(payload)
@@ -147,7 +146,7 @@ class Ticket:
     def create_ticket(self,check = True):
         if self.format_data() == 1:
             print("create_ticket abort")
-            return 1
+            yield 1
         payload = self.create_payload()
         # Create ticket
         print("SUMMARY: ", self.summary)
@@ -157,18 +156,20 @@ class Ticket:
         else:
             yes = ""
         if yes == "yes" or check == False:
+            yield "Posting request"
             response = requests.post(self.url, data=payload, headers=self.headers, auth=self.auth)
             print(response.status_code)
             print(response.text)
             self.id = response.json()["id"]
             url = response.json()["self"]
+            yield "sending Attachement"
             self.sendAttachment(url)
             print("Response 1: ", response)
             print(response.text)
-            return response.status_code
+            yield response.status_code
         else:
             print("abort")
-            return "canceled"
+            yield "canceled"
         
 
     def sendAttachment(self,ticketUrl):

@@ -139,8 +139,8 @@ def tableToTicket(table,check=True):
             ticketTable = ticket.Ticket(table,tempObjs,filename,"Allpower","neueintritt")
         elif "neueintritt" in str(table.name).lower():
             ticketTable = ticket.Ticket(table,tempObjs,filename,"Allpower","neueintritte")
-        status = ticketTable.create_ticket(check)
-        return status
+        for status in ticketTable.create_ticket(check=True):
+            yield status
     
 
 def _removeDoubles(newFileList):
