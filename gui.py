@@ -31,7 +31,7 @@ class App:
         # Initialize variables
         self.master = master
         #self.master.resizable(False, False)
-        self.master.title("Jira-Check")
+        self.master.title("JiraFlow")
         self.master.iconbitmap("jira.ico")
         self.master.geometry("850x500")
         self.data = data
