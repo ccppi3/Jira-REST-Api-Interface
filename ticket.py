@@ -124,10 +124,10 @@ class Ticket:
         payload["fields"]["description"]["content"].append(self.table)
         payload["fields"]["summary"] = self.summary
         payload["fields"]["labels"] = self.label if self.label else []
-        #if self.ticketType == "arbeitsplatzwechsel":
-        #    payload["fields"]["customfield_10010"] = "Onboard new Employee"
-        #else:
-        #    payload["fields"]["customfield_10010"] = "Workplace change"
+        if self.ticketType == "arbeitsplatzwechsel":
+            payload["fields"]["customfield_10010"] = ["Onboard new Employee"]
+        else:
+            payload["fields"]["customfield_10010"] = ["Workplace change"]
         
         #try:
         payload2 = json.dumps(payload)

@@ -126,7 +126,7 @@ def tablesToTicket(tableDataList,check=True): #tackes the tabledata and creates 
             ticketTable = ticket.Ticket(table,tempObjs,filename,"Allpower","neueintritt")
         elif "neueintritt" in str(table.name).lower():
             ticketTable = ticket.Ticket(table,tempObjs,filename,"Allpower","neueintritte")
-        ticketTable.create_ticket(check=True)
+        ticketTable.createTicket(check=True)
 
 def tableToTicket(table,check=True):
         log("table: ",table,level=err.INFO)
@@ -144,7 +144,7 @@ def tableToTicket(table,check=True):
             ticketTable = ticket.Ticket(table,tempObjs,filename,"Allpower","neueintritt")
         elif "neueintritt" in str(table.name).lower():
             ticketTable = ticket.Ticket(table,tempObjs,filename,"Allpower","neueintritte")
-        for status in ticketTable.create_ticket(check=True):
+        for status in ticketTable.createTicket(check=True):
             yield status
     
 
