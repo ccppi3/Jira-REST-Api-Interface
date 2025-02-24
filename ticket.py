@@ -6,11 +6,7 @@ import requests, json, os
 from requests.auth import HTTPBasicAuth
 from dotenv import load_dotenv
 import json
-import pdf
-from pop3 import err as err
-import copy
 import inspect
-import pop3
 from pop3 import log,err
 
 
@@ -53,14 +49,13 @@ class Ticket:
         self.token = os.getenv("TOKEN")
         # Auth
         self.auth = HTTPBasicAuth(self.email, self.token)
-        # Variavble declarations
+        # Variable declarations
         self.ticketType = ticketType.lower()
         self.data = data
         self.file_name = file_name
         self.description = ""
         self.label = [ticketType]
         self.summary = ticketType + " " + file_name[29:-4]
-        print(self.summary)
         self.id = ""
         self.table = ""
         self.company = company
@@ -82,7 +77,7 @@ class Ticket:
 
 
     # Format data in a way to use the payload template easily
-    def format_data(self):
+    def formatData(self):
         self.tableRows = []
         tableHeaders = []
         for item in inspect.getmembers(self.data[0]):
@@ -119,7 +114,7 @@ class Ticket:
 
 
     # Create the Payload from a Template and input data
-    def create_payload(self):
+    def createPayload(self):
         with open("TemplatePayload.json", "r") as file:
             template_data = json.load(file)
         payload = template_data
@@ -143,11 +138,11 @@ class Ticket:
         return payload2
 
     # Send payload to Jira Api --> Ticket creation
-    def create_ticket(self,check = True):
-        if self.format_data() == 1:
+    def createTicket(self,check = True):
+        if self.formatData() == 1:
             print("create_ticket abort")
             yield 1
-        payload = self.create_payload()
+        payload = self.createPayload()
         # Create ticket
         print("SUMMARY: ", self.summary)
 
