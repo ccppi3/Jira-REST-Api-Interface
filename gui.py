@@ -11,6 +11,10 @@ import main
 import inspect
 from pop3 import log,err
 import pop3
+import pythoncom
+import com
+
+pythoncom.CoInitialize()
 
 from pymupdf.mupdf import UCDN_SCRIPT_OLD_UYGHUR
 
@@ -86,7 +90,10 @@ class App:
 
     # Handle refresh button click
     def refresh_button_handler(self):
-        self.loadingThread = threading.Thread(target=self.loading,args=(self.fetch_thread,None))
+        outlook = com.init()
+        pythoncom.CoInitialize()
+        
+        self.loadingThread = threading.Thread(target=self.loading,args=(self.fetch_thread,outlook))
         self.loadingThread.start()
 
     def post_thread(self,callback_queue,tab):
@@ -99,8 +106,9 @@ class App:
             else: #when returns type is intiger we have finised
                 callback_queue.put("destroy")
 
-    def fetch_thread(self,callback_queue,dummy):
-        for ret in main.run():
+    def fetch_thread(self,callback_queue,outlook):
+        pythoncom.CoInitialize()
+        for ret in main.run(outlook):
             if type(ret) == list:
                 self.tables = ret
             else:
@@ -113,7 +121,10 @@ class App:
         print("loading...")
         # Disable buttons
         if tab:
-            tab.confirm_button.config(state=tk.DISABLED)
+            try:
+                tab.confirm_button.config(state=tk.DISABLED)
+            except:
+                pass
 
         self.refresh_button.config(state=tk.DISABLED)
         # Display a loading bar
@@ -132,8 +143,10 @@ class App:
 
         self.init_tabs(self.tables)
         # Reavtivate buttons
-        if tab:
+        try:
             tab.confirm_button.config(state=tk.NORMAL)
+        except:
+            log("noTabs")
         if msg == "destroy":
             tab.destroy()
 
@@ -211,23 +224,7 @@ class App:
 
 
 if __name__ == "__main__":
-    tables = pdf.Tables("Arbeitsplatzeinteilung KW 04 20.01.2025.pdf")
-    pdf.setDebugLevel(err.ERROR)
-    tables.selectPage(0)
-    listTable = tables.setTableNames(["Tabelle 1", "Arbeitsplatzwechsel", "NEUEINTRITT", "NEUEINTRITTE"])
-    tableDataList = []
-
-    for table in listTable:
-        tables.selectTableByObj(table)
-        tables.defRows(["Vorname", "Name", "Kürzel", "Abteilung vorher", "Abteilung neu", "Platz-Nr", "Abteilung"])
-        tables.parseTable()
-        objList = []
-        obj_list = tables.getObjectsFromTable()
-        for obj in obj_list:
-            objcpy = copy.deepcopy(obj)
-            objList.append(objcpy)
-
-        tableDataList.append(TableData(table.name, objList, table.fileName, table.pageNumber, "04-03-2020"))
     root = tk.Tk()
-    app = App(root, objList, "neueintritt")
+    objList = [] # dummy need to fix
+    app = App(root, objList, "dummyload")
     root.mainloop()

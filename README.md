@@ -158,4 +158,8 @@ Jut enter:
 this will run the makefile and the build process. Be aware that the transpiling process of all the dependencies takes a LOOOT of time.  
 This is due to Nuitka is a python program which can only use one cpu core as the python multithreading is not "real" multithreading.
 
-If it fails it is most likely due to the compiller not installed(msvc) or misconfigured.
+~~if it fails it is most likely due to the compiller not installed(msvc) or misconfigured.~~
+
+we have to use msvc but configured with the clang backend, which is much faster and to work around a bug with the heap allocation in msvc own compiller.
+
+Note: the second time running should take much less time because of the clcache which stores unchanged components.

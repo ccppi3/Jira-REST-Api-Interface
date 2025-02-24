@@ -5,6 +5,7 @@ import copy
 import com
 import ticket
 from pop3 import log,err
+import pythoncom
 
 from dotenv import load_dotenv
 
@@ -36,30 +37,34 @@ port = os.getenv('Port')
 
 pdf.setDebugLevel(err.ULTRA,_filter="")
 pop3.setDebugLevel(err.ULTRA)
-def run():
+def run(outlook):
+    pythoncom.CoInitialize()
+
     newAdded = []
     uidsMail = []
     log("parsing uids...")
     yield "parsing uids..."
 
     uids = com.getEntryIDDb()
-    uidsMail = com.getEntryIDMail(filterName)
+    #uidsMail = com.getEntryIDMail(filterName,outlook)
+    for ids in com.getEntryIDMail(filterName,outlook):
+        uidsMail.append(ids)
     
-    if uidsMail:
-        newAdded = com.addEntryIDDb(uidsMail)
+    log("addEntryIDDB uidsMail",uidsMail,"len:",len(uidsMail))
+    newAdded = com.addEntryIDDb(uidsMail)
     if len(newAdded)==0:
         log("No new mail, nothing to do",level=err.NONE)
     for uid in newAdded:
         log("newadded:",uid," type:",type(uid))
 
-    newFileList = _trimNewAdded(newAdded)
+    newFileList = _trimNewAdded(newAdded,outlook)
     log("newFileList:",newFileList,level=err.INFO)
 
     newFileList = _removeDoubles(newFileList)
     #newFilelist = _filterList(newFileList)
     for a in newFileList:
         log("Download :",a.path,a.uid)
-        com.downloadAttachements(a.uid)
+        com.downloadAttachements(a.uid,outlook)
         yield "Download..." + str(a.path)
     
     printStatistics(uids,newAdded,newFileList)
@@ -166,11 +171,11 @@ def _filterList(fileNameList,pdfNameFilter=PDFNAMEFILTER): #filter out: is a pla
     removeIndexesFromList(toBeRemoved,fileNameList)
     return fileNameList
 
-def _trimNewAdded(newAddedList):#get attachements, on double entries, choose the newest and drop the older
+def _trimNewAdded(newAddedList,outlook):#get attachements, on double entries, choose the newest and drop the older
     newFileList = []
     for uid in newAddedList:
         log("new uid to parse:",uid)
-        for att in com.getAttachements(uid):
+        for att in com.getAttachements(uid,outlook):
             if att.path not in newFileList:
                 newFileList.append(att)
                 log("Date:",att.creationDate)

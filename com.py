@@ -9,12 +9,19 @@ import os
 from dotenv import load_dotenv
 import sqlite3
 from pop3 import err,log
+import pythoncom
+
+
 
 PATH = os.getcwd() + "\\downloads\\"
 print(PATH)
 INBOXNR = 6
 
 load_dotenv()
+
+pythoncom.CoInitialize()
+
+
 
 filterName = os.getenv("FilterName")
 class Entry:
@@ -26,6 +33,13 @@ class Entry:
         return self.path == other
     def __str__(self):
         return str(self.path) + " " + str(self.creationDate)
+
+def init():
+    try:
+        outlook = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+    except:
+        log("error no connection to outlook",level=err.ERROR)
+    return outlook
 
 def getEntryIDDb(filename="mail.db"):
     connection = sqlite3.connect(filename)
@@ -71,9 +85,16 @@ def getFileName(filename):
     ending = dotList[len(dotList)-1]#use the last entry
     return ending
 
+def getMAPI(outlook):
+    try:
+        outlook = win32com.client.GetActiveObject("Outlook.Application")
+    except:
+        log("could not get active outlook instance!",level=err.ERROR)
+    outlook = outlook.GetNameSpace("MAPI")
+    return outlook
 
-def getEntryIDMail(filterName,inboxnr=INBOXNR):
-    outlook = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+def getEntryIDMail(filterName,outlook,inboxnr=INBOXNR):
+    outlook = getMAPI(outlook)
     inbox = outlook.GetDefaultFolder(inboxnr)
     print("Folder:",inbox.Name)
     messages = inbox.Items
@@ -85,11 +106,10 @@ def getEntryIDMail(filterName,inboxnr=INBOXNR):
         else:
             if str(filterName).lower() in str(m.Sender).lower():
                 yield m.EntryID
-    return []
     
 
-def downloadAllAttachements(fileEnding,filterName,path=PATH,inboxnr=INBOXNR):
-    outlook = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+def downloadAllAttachements(fileEnding,filterName,outlook,path=PATH,inboxnr=INBOXNR):
+    outlook = getMAPI(outlook)
     inbox = outlook.GetDefaultFolder(inboxnr)
     print("Folder:",inbox.Name)
 
@@ -109,8 +129,8 @@ def downloadAllAttachements(fileEnding,filterName,path=PATH,inboxnr=INBOXNR):
                         att.SaveAsFile(path)
                         print("download to:",PATH)
 
-def getAttachements(entryID,fileEnding="pdf",path=PATH,inboxnr=INBOXNR):
-    outlook = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+def getAttachements(entryID,outlook,fileEnding="pdf",path=PATH,inboxnr=INBOXNR):
+    outlook = getMAPI(outlook)
     inbox = outlook.GetDefaultFolder(inboxnr)
 
     messages = inbox.Items
@@ -122,8 +142,8 @@ def getAttachements(entryID,fileEnding="pdf",path=PATH,inboxnr=INBOXNR):
                     path = path + str(att)
                     yield Entry(m.EntryID,path,m.CreationTime)
 
-def downloadAttachements(entryID,fileEnding="pdf",path=PATH,inboxnr=INBOXNR):
-    outlook = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+def downloadAttachements(entryID,outlook,fileEnding="pdf",path=PATH,inboxnr=INBOXNR):
+    outlook = getMAPI(outlook)
     inbox = outlook.GetDefaultFolder(inboxnr)
 
     messages = inbox.Items
