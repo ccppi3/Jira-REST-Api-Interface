@@ -13,14 +13,15 @@ from pop3 import log,err
 import pop3
 import pythoncom
 import com
-
-pythoncom.CoInitialize()
+import os
 
 from pymupdf.mupdf import UCDN_SCRIPT_OLD_UYGHUR
 
 import pdf
 from pop3 import err as err
 import copy
+
+pythoncom.CoInitialize()
 
 class TableData:
     def __init__(self,name,data,fileName,pageNumber,creationDate):
@@ -32,11 +33,12 @@ class TableData:
 
 class App:
     def __init__(self, master, data, ticketType):
+        cwd = os.getcwd()
         # Initialize variables
         self.master = master
         #self.master.resizable(False, False)
         self.master.title("JiraFlow")
-        self.master.iconbitmap("jira.ico")
+        self.master.iconbitmap(cwd + "/jira.ico")
         self.master.geometry("850x500")
         self.data = data
         self.ticketType = ticketType.lower()
@@ -163,7 +165,7 @@ class App:
         # Create window
         self.make_sure_window = tk.Toplevel(self.master)
         self.make_sure_window.title("Are you sure? ")
-        self.make_sure_window.iconbitmap("jira.ico")
+        self.make_sure_window.iconbitmap(os.getcwd() + "/jira.ico")
         self.make_sure_window.resizable(False, False)
         self.make_sure_window.geometry("300x100")
 
