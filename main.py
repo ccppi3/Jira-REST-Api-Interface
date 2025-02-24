@@ -37,6 +37,11 @@ port = os.getenv('Port')
 
 pdf.setDebugLevel(err.ULTRA,_filter="")
 pop3.setDebugLevel(err.ULTRA)
+
+cwd = os.getcwd()
+if not os.path.exists(cwd + "/downloads"):
+    os.makedirs(cwd + "/downloads")
+
 def run(outlook):
     pythoncom.CoInitialize()
 
