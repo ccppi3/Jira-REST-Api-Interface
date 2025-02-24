@@ -14,6 +14,7 @@ import pop3
 import pythoncom
 import com
 import os
+import sys
 
 from pymupdf.mupdf import UCDN_SCRIPT_OLD_UYGHUR
 
@@ -33,12 +34,11 @@ class TableData:
 
 class App:
     def __init__(self, master, data, ticketType):
-        cwd = os.getcwd()
         # Initialize variables
         self.master = master
         #self.master.resizable(False, False)
         self.master.title("JiraFlow")
-        self.master.iconbitmap(cwd + "/jira.ico")
+        self.master.iconbitmap(getResourcePath("jira.ico"))
         self.master.geometry("850x500")
         self.data = data
         self.ticketType = ticketType.lower()
@@ -165,7 +165,7 @@ class App:
         # Create window
         self.make_sure_window = tk.Toplevel(self.master)
         self.make_sure_window.title("Are you sure? ")
-        self.make_sure_window.iconbitmap(os.getcwd() + "/jira.ico")
+        self.make_sure_window.iconbitmap(getResourcePath("jira.ico"))
         self.make_sure_window.resizable(False, False)
         self.make_sure_window.geometry("300x100")
 
@@ -223,7 +223,12 @@ class App:
 
         print("templist:",listOfList)
 
-
+def getResourcePath(relPath):
+    try:
+        basePath = sys._MEIPASS
+    except Exception:
+        basePath = os.path.abspath(".")
+    return os.path.join(basePath,relPath)
 
 if __name__ == "__main__":
     root = tk.Tk()
