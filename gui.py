@@ -311,8 +311,13 @@ class Config():
             return "error parsing help.txt"
         else:
             for  section in sections:
-                helpList.append((section,self.helpParser[section]['text']))
-            return helpList
+                try:
+                    helpList.append((section,self.helpParser[section]['text']))
+                except:
+                    print("Error parsing help.txt file, look for syntax errors")
+                    return "Parsing error help.txt"
+                else:
+                    return helpList
 
 
      
