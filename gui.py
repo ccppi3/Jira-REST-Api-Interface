@@ -242,25 +242,29 @@ def _dir(_object): #wrapper function to exclude internal objects
     return _list
     
 class Config():
-
     class tkObjects:
         pass
     def __init__(self,root):
         helpMessage="default help"
-
         listOfEntries = self._loadConfig()
 
         self.window = tk.Toplevel(root)
         self.window.grab_set()
 
+        helpText = self._loadHelpText()
+
         for i,entry in enumerate(listOfEntries):
             print(entry)
             tmpObj = ck.CTkLabel(self.window,text=entry[0])
             tmpObj.grid(row=i,column=0)
+
             tmpObj = ck.CTkTextbox(self.window,height=1,width = 500)
             tmpObj.insert(tk.END,entry[1])
             tmpObj.grid(row=i,column=1)
-            tt.CTkToolTip(tmpObj,message=helpMessage)
+
+            for txt in helpText:
+                if(txt[0] == entry[0]):
+                    tt.CTkToolTip(tmpObj,message=txt[1])
 
             tmpObj.value = entry[1]
             tmpObj.id = i
@@ -295,6 +299,22 @@ class Config():
                 for element in configSection:
                     configList.append((element,configSection[element]))
                 return configList
+    def _loadHelpText(self):
+        helpList=[]
+        self.helpParser = configparser.ConfigParser()
+        self.helpParser.optionxform = str
+        self.helpParser.read(getResourcePath("help.txt"))
+        try:
+            sections = self.helpParser.sections()
+        except:
+            print("found no parsing keys in the help.txt file, does the file exist?")
+            return "error parsing help.txt"
+        else:
+            for  section in sections:
+                helpList.append((section,self.helpParser[section]['text']))
+            return helpList
+
+
      
 
 
