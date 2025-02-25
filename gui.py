@@ -15,6 +15,8 @@ import pythoncom
 import com
 import os
 import sys
+from dotenv import load_dotenv
+import configparser
 
 from pymupdf.mupdf import UCDN_SCRIPT_OLD_UYGHUR
 
@@ -229,6 +231,67 @@ def getResourcePath(relPath):
     except Exception:
         basePath = os.path.abspath(".")
     return os.path.join(basePath,relPath)
+
+def _dir(_object): #wrapper function to exclude internal objects
+    _list=[]
+    for obj in dir(_object):
+        if not obj.startswith("__"):
+            _list.append(obj)
+    return _list
+    
+class Config():
+    class tkObjects:
+        pass
+    def __init__(self,root):
+
+        listOfEntries = self._loadConfig()
+
+        self.window = tk.Toplevel(root)
+        self.window.grab_set()
+
+        for i,entry in enumerate(listOfEntries):
+            print(entry)
+            tmpObj = tk.Label(self.window,text=entry[0])
+            tmpObj.grid(row=i,column=0)
+            tmpObj = tk.Text(self.window,height=1)
+            tmpObj.insert(tk.END,entry[1])
+            tmpObj.grid(row=i,column=1)
+            tmpObj.value = entry[1]
+            tmpObj.id = i
+            setattr(self.tkObjects,entry[0],tmpObj)
+
+        for objName in _dir(self.tkObjects):
+            obj = getattr(self.tkObjects,objName)
+            print("value: ",obj.value," id:",obj.id)
+
+        #for slave in self.window.grid_slaves():
+        #    print(dir(slave))
+        #    print(type(slave),slave,slave.get("1.0",tk.END))
+        #    slave.grid(padx=10,pady=10)
+
+
+    def _loadConfig(self):
+        configList=[]
+        self.config = configparser.ConfigParser()
+        self.config.optionxform = str
+        self.config.read(getResourcePath(".env"))
+        try:
+            sections=self.config.sections()
+        except:
+            print("Now sections! You ar using an old style .env, please update the config to have a [CONFIG] Section")
+            return "Section Error"
+        else:
+            try:
+                configSection = self.config['CONFIG']
+            except:
+                print("You ar using an old style .env, please update the config to have a [CONFIG] Section")
+                return "Section Error"
+            else:
+                for element in configSection:
+                    configList.append((element,configSection[element]))
+                return configList
+     
+
 
 if __name__ == "__main__":
     root = tk.Tk()
