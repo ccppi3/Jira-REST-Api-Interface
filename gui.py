@@ -4,6 +4,7 @@
 import time
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox
 import customtkinter as ck
 import CTkToolTip as tt
 import threading
@@ -42,6 +43,7 @@ class App:
         self.master = master
         #self.master.resizable(False, False)
         self.master.title("JiraFlow")
+        self.setupToolBar()
         self.master.iconbitmap(getResourcePath("jira.ico"))
         self.master.geometry("850x500")
         self.data = data
@@ -61,6 +63,23 @@ class App:
 
         self.status_label = tk.Label(self.master, text="Status: " + self.status)
         self.status_label.pack()
+
+
+    def setupToolBar(self):
+        menubar = tk.Menu(self.master)
+        settingsMenu = tk.Menu(menubar)
+        settingsMenu.add_command(label="Options",command = lambda: Config(self.master))
+
+
+        helpMenu = tk.Menu(menubar)
+        helpMenu.add_command(label="Credits",command = self.showCredits)
+
+        menubar.add_cascade(label="Settings",menu=settingsMenu)
+        menubar.add_cascade(label="About",menu=helpMenu)
+
+        self.master.config(menu=menubar)
+    def showCredits(self):
+        messagebox.showinfo("Credits","This software was developed by \nJoel Bonini \nand\n Jonathan Wyss \nin santis for internal usage")
 
     def init_tabs(self,tables):
         self.tabs = []
