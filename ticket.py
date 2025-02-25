@@ -124,15 +124,15 @@ class Ticket:
         payload["fields"]["description"]["content"].append(self.table)
         payload["fields"]["summary"] = self.summary
         payload["fields"]["labels"] = self.label if self.label else []
-        if self.ticketType == "arbeitsplatzwechsel":
-            payload["fields"]["customfield_10010"] = ["Onboard new Employee"]
+        if self.ticketType != "arbeitsplatzwechsel":
+            payload["fields"]["customfield_10010"] = "lzbapw/newhires" #portalkey / requesttype key
         else:
-            payload["fields"]["customfield_10010"] = ["Workplace change"]
+            payload["fields"]["customfield_10010"] = "lzbapw/d3218f88-1017-4215-8b9c-194ea96ea6dd"
         
         #try:
         payload2 = json.dumps(payload)
         print("payload2 dump:",payload2)
-        #except:
+        #except :
         #log("error payload type:",type(payload),"\n content:",payload,level=err.ERROR)
         print("payload:",payload)
         return payload2
