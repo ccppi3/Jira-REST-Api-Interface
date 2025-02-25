@@ -263,17 +263,22 @@ class Config():
             tmpObj.grid(row=i,column=1)
 
             for txt in helpText:
+                print("txt:",txt[0])
                 if(txt[0] == entry[0]):
                     tt.CTkToolTip(tmpObj,message=txt[1])
 
             tmpObj.value = entry[1]
             tmpObj.id = i
             setattr(self.tkObjects,entry[0],tmpObj)
+
         self._tkConfigAll()
 
         for objName in _dir(self.tkObjects):
             obj = getattr(self.tkObjects,objName)
             print("value: ",obj.value," id:",obj.id)
+
+        self.buttonSave = tk.Button(self.window,text="Save",command=self._saveConfig)
+        self.buttonSave.grid(row = i+1,column=0)
 
     def _tkConfigAll(self):
         for slave in self.window.grid_slaves():
@@ -299,6 +304,7 @@ class Config():
                 for element in configSection:
                     configList.append((element,configSection[element]))
                 return configList
+
     def _loadHelpText(self):
         helpList=[]
         self.helpParser = configparser.ConfigParser()
@@ -316,8 +322,27 @@ class Config():
                 except:
                     print("Error parsing help.txt file, look for syntax errors")
                     return "Parsing error help.txt"
-                else:
-                    return helpList
+            return helpList
+
+    def _saveConfig(self):
+        sections=self.config.sections()
+        try:
+            configSection = self.config['CONFIG']
+        except:
+            return "config section not found"
+
+        for objName in _dir(self.tkObjects):
+            obj = getattr(self.tkObjects,objName)
+            self.config.set('CONFIG',objName,obj.get('1.0',tk.END))
+        
+        try:
+            with open(getResourcePath(".env"),'w') as configFile:
+                      self.config.write(configFile)
+        except:
+            print("ERROR writing .env file!")
+            return "error writing file"
+        else:
+            print("Wrote .env file")
 
 
      
