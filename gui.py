@@ -4,6 +4,8 @@
 import time
 import tkinter as tk
 from tkinter import ttk
+import customtkinter as ck
+import CTkToolTip as tt
 import threading
 from functools import partial
 import queue
@@ -240,9 +242,11 @@ def _dir(_object): #wrapper function to exclude internal objects
     return _list
     
 class Config():
+
     class tkObjects:
         pass
     def __init__(self,root):
+        helpMessage="default help"
 
         listOfEntries = self._loadConfig()
 
@@ -251,25 +255,26 @@ class Config():
 
         for i,entry in enumerate(listOfEntries):
             print(entry)
-            tmpObj = tk.Label(self.window,text=entry[0])
+            tmpObj = ck.CTkLabel(self.window,text=entry[0])
             tmpObj.grid(row=i,column=0)
-            tmpObj = tk.Text(self.window,height=1)
+            tmpObj = ck.CTkTextbox(self.window,height=1,width = 500)
             tmpObj.insert(tk.END,entry[1])
             tmpObj.grid(row=i,column=1)
+            tt.CTkToolTip(tmpObj,message=helpMessage)
+
             tmpObj.value = entry[1]
             tmpObj.id = i
             setattr(self.tkObjects,entry[0],tmpObj)
+        self._tkConfigAll()
 
         for objName in _dir(self.tkObjects):
             obj = getattr(self.tkObjects,objName)
             print("value: ",obj.value," id:",obj.id)
 
-        #for slave in self.window.grid_slaves():
-        #    print(dir(slave))
-        #    print(type(slave),slave,slave.get("1.0",tk.END))
-        #    slave.grid(padx=10,pady=10)
-
-
+    def _tkConfigAll(self):
+        for slave in self.window.grid_slaves():
+            slave.grid(padx=10,pady=10)
+        
     def _loadConfig(self):
         configList=[]
         self.config = configparser.ConfigParser()
