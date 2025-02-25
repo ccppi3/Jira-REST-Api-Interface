@@ -20,6 +20,7 @@ import os
 import sys
 from dotenv import load_dotenv
 import configparser
+import webbrowser
 
 from pymupdf.mupdf import UCDN_SCRIPT_OLD_UYGHUR
 
@@ -73,6 +74,7 @@ class App:
 
         helpMenu = tk.Menu(menubar)
         helpMenu.add_command(label="Credits",command = self.showCredits)
+        helpMenu.add_command(label="Help",command = self.showHelp)
 
         menubar.add_cascade(label="Settings",menu=settingsMenu)
         menubar.add_cascade(label="About",menu=helpMenu)
@@ -80,6 +82,21 @@ class App:
         self.master.config(menu=menubar)
     def showCredits(self):
         messagebox.showinfo("Credits","This software was developed by \nJoel Bonini \nand\n Jonathan Wyss \nin santis for internal usage")
+    def showHelp(self):
+        helpWindow = tk.Toplevel(self.master)
+        helpWindow.title("Help")
+
+        l1 = tk.Label(helpWindow,text="Please refer to the following")
+        l1.pack(padx=10,pady=10)
+        l2 = tk.Label(helpWindow,text="http://wiki.santisedu.local/books/jiraflow",cursor="hand2",relief='raised',foreground='blue')
+        l2.pack(padx=10,pady=10)
+        l3 = tk.Label(helpWindow,text="https://github.com/ccppi3/Jira-REST-Api-Interface",cursor="hand2",relief='raised',foreground='blue')
+        l3.pack(padx=10,pady=10)
+        l2.bind("<Button-1>",lambda e:self.hyperlinkCallback(l2.cget("text")))
+        l3.bind("<Button-1>",lambda e:self.hyperlinkCallback(l3.cget("text")))
+
+    def hyperlinkCallback(self,url):
+        webbrowser.open_new_tab(url)
 
     def init_tabs(self,tables):
         self.tabs = []
@@ -259,7 +276,8 @@ def _dir(_object): #wrapper function to exclude internal objects
         if not obj.startswith("__"):
             _list.append(obj)
     return _list
-    
+
+#gui configuration window
 class Config():
     class tkObjects:
         pass
@@ -271,9 +289,10 @@ class Config():
         self.window.grab_set()
 
         helpText = self._loadHelpText()
-
+        
+        #we create an object attribute for each config entry (metaprogramming)
+        #we add a toolbox for each textbox
         for i,entry in enumerate(listOfEntries):
-            print(entry)
             tmpObj = ck.CTkLabel(self.window,text=entry[0])
             tmpObj.grid(row=i,column=0)
 
@@ -282,7 +301,6 @@ class Config():
             tmpObj.grid(row=i,column=1)
 
             for txt in helpText:
-                print("txt:",txt[0])
                 if(txt[0] == entry[0]):
                     tt.CTkToolTip(tmpObj,message=txt[1])
 
@@ -290,14 +308,15 @@ class Config():
             tmpObj.id = i
             setattr(self.tkObjects,entry[0],tmpObj)
 
+        #we apply batch configs for all elements in page
         self._tkConfigAll()
 
         for objName in _dir(self.tkObjects):
             obj = getattr(self.tkObjects,objName)
-            print("value: ",obj.value," id:",obj.id)
 
         self.buttonSave = tk.Button(self.window,text="Save",command=self._saveConfig)
         self.buttonSave.grid(row = i+1,column=0)
+
 
     def _tkConfigAll(self):
         for slave in self.window.grid_slaves():
@@ -359,11 +378,11 @@ class Config():
                       self.config.write(configFile)
         except:
             print("ERROR writing .env file!")
+            messagebox.showerror("Config","Config has not been written")
             return "error writing file"
         else:
             print("Wrote .env file")
-
-
+            messagebox.showinfo("Config","Config sucessfull saved")
      
 
 
