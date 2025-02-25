@@ -1,0 +1,16 @@
+[FilterName]
+text=This Field defines the sender from which the emails are taken, which are used to parse the pdfs.
+[PdfNameFilter]
+text=This defines what the PdfName should include to get passed to the Parser.
+[EMail]
+text=This is used to set the email of the creator on the Jira ticket
+[TOKEN]
+text=This is the jira access token for the rest api
+[IssueUrl]
+text=This is the endpoint where the issues are created.
+[RequestTypeField]
+text=Describes the custom jira field which is to set on a match for example: customfiled_10010
+[RequestOnBoardKey]
+text=The key used for the RequestTypeField, to select witch request type
+[RequestChangeKey]
+text=Same as above but for Workplacechange
