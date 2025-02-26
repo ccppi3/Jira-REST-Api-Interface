@@ -105,7 +105,6 @@ class App:
             print("type table.data:",type(table.data))
             print("len vars:",len(vars(tables[i].data[0])))
             if len(tables[i].data) > 0 and len(vars(tables[i].data[0]))>0:
-
                 print("len of data:",len(table.data))
                 tabRef = ttk.Frame(self.tabControl)
                 tabRef.table = table
@@ -121,7 +120,6 @@ class App:
                 tab.confirm_button = tk.Button(tab, text="Create Ticket", command=confirm_wrapper)
                 tab.confirm_button.grid(row=3, column=0, columnspan=1, padx=5, pady=5, sticky="nsew")
                 self.create_table(tab,tables[i])
-
 
     # Handle confirm button click
     def confirm_button_handler(self,tab):
@@ -218,11 +216,13 @@ class App:
         yes_button = tk.Button(self.make_sure_window, text="Yes", command=confirm_wrapper)
         yes_button.grid(row=1, column=0, columnspan=1, padx=5, pady=5, sticky="nsew")
         # Cancel button
-        cancel_button = tk.Button(self.make_sure_window, text="Cancel", command=self.cancel)
+        cancel_wrapper = partial(self.cancel,tab)
+        cancel_button = tk.Button(self.make_sure_window, text="Cancel", command=cancel_wrapper)
         cancel_button.grid(row=1, column=1, columnspan=1, padx=5, pady=5, sticky="nsew")
 
     # Close window on cancel
-    def cancel(self):
+    def cancel(self,tab):
+        tab.confirm_button.config(state=tk.NORMAL)
         self.make_sure_window.destroy()
 
     # Function to create the table
