@@ -47,6 +47,10 @@ class Ticket:
         self.url = os.getenv('IssueUrl')
         self.email = os.getenv('EMail')
         self.token = os.getenv("TOKEN")
+        # Request Type keys
+        self.requestCustomField = os.getenv('RequestTypeField')
+        self.onboardKey = os.getenv('RequestOnBoardKey')
+        self.changeKey = os.getenv('RequestChangeKey')
         # Auth
         self.auth = HTTPBasicAuth(self.email, self.token)
         # Variable declarations
@@ -120,14 +124,18 @@ class Ticket:
         payload = template_data
         print("type template:",type(template_data),"before edit:",json.dumps(template_data))
         if self.company.lower() == "allpower":
+            portalkey = "lzbapw" # Portalkey is needed for customfield
             payload["fields"]["project"]["key"] = "LZBAPW"
+        else:
+            portalkey = "lzbict"
         payload["fields"]["description"]["content"].append(self.table)
         payload["fields"]["summary"] = self.summary
         payload["fields"]["labels"] = self.label if self.label else []
+
         if self.ticketType != "arbeitsplatzwechsel":
-            payload["fields"]["customfield_10010"] = "lzbapw/newhires" #portalkey / requesttype key
+            payload["fields"][self.requestCustomField] = portalkey + "/" + self.onboardKey  #portalkey / requesttype key
         else:
-            payload["fields"]["customfield_10010"] = "lzbapw/d3218f88-1017-4215-8b9c-194ea96ea6dd"
+            payload["fields"]["customfield_10010"] = portalkey + "/" + self.changeKey
         
         #try:
         payload2 = json.dumps(payload)
