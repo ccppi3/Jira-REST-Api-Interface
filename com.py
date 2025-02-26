@@ -124,7 +124,6 @@ def getEntryIDMail(filterName,outlook,inboxnr=INBOXNR):
             log("no Sender object in message")
         else:
             if str(filterName).strip().lower() in str(m.Sender).strip().lower():
-                log("sender Match!")
                 yield m.EntryID
             else:
                 log("Sender",m.Sender,"does not match",filterName)

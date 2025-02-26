@@ -209,6 +209,7 @@ class App:
         self.make_sure_window.resizable(False, False)
         self.make_sure_window.geometry("300x100")
 
+
         # Display prompt
         self.make_sure_label = tk.Label(self.make_sure_window, text=f"Are you sure you want to create this Ticket?")
         self.make_sure_label.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
@@ -219,12 +220,14 @@ class App:
         yes_button.grid(row=1, column=0, columnspan=1, padx=5, pady=5, sticky="nsew")
         # Cancel button
         cancel_wrapper = partial(self.cancel,tab)
+        self.make_sure_window.protocol("WM_DELETE_WINDOW",cancel_wrapper)
         cancel_button = tk.Button(self.make_sure_window, text="Cancel", command=cancel_wrapper)
         cancel_button.grid(row=1, column=1, columnspan=1, padx=5, pady=5, sticky="nsew")
 
     # Close window on cancel
     def cancel(self,tab):
         tab.confirm_button.config(state=tk.NORMAL)
+        self.refresh_button.config(state=tk.NORMAL)
         self.make_sure_window.destroy()
 
     # Function to create the table

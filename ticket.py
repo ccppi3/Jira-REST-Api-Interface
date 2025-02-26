@@ -121,7 +121,7 @@ class Ticket:
 
     # Create the Payload from a Template and input data
     def createPayload(self):
-        with open("TemplatePayload.json", "r") as file:
+        with open(getResourcePath("TemplatePayload.json"), "r") as file:
             template_data = json.load(file)
         payload = template_data
         print("type template:",type(template_data),"before edit:",json.dumps(template_data))
