@@ -78,6 +78,24 @@ def addEntryIDDb(entryIDList,filename="mail.db"):
     connection.close()
     return newAddedList
     
+def rmEntryIDDB(entryId,filename="mail.db"):
+    connection = sqlite3.connect(filename)
+    cursor = connection.cursor()
+    cursor.execute("""DELETE FROM outlook WHERE id = ? RETURNING id""",(entryId,))
+    log("Remove result:",cursor.fetchone())
+    connection.commit()
+    connection.close()
+    
+def rmLastEntryIDDB(filename="mail.db"):
+    connection = sqlite3.connect(filename)
+    cursor = connection.cursor()
+    cursor.execute("""SELECT * from outlook ORDER BY rowid DESC LIMIT 1""")
+    lastId = cursor.fetchone()
+    connection.close()
+
+    log("latest entry in db:",lastId)
+    rmEntryIDDB(lastId[1])
+
 
 
 def getFileName(filename):

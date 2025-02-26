@@ -71,11 +71,14 @@ class App:
         settingsMenu = tk.Menu(menubar)
         settingsMenu.add_command(label="Options",command = lambda: Config(self.master))
 
-
         helpMenu = tk.Menu(menubar)
         helpMenu.add_command(label="Credits",command = self.showCredits)
         helpMenu.add_command(label="Help",command = self.showHelp)
 
+        editMenu = tk.Menu(menubar)
+        editMenu.add_command(label="Forget last Mail",command = com.rmLastEntryIDDB)
+
+        menubar.add_cascade(label="Edit",menu=editMenu)
         menubar.add_cascade(label="Settings",menu=settingsMenu)
         menubar.add_cascade(label="About",menu=helpMenu)
 
