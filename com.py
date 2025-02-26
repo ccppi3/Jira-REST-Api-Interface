@@ -10,14 +10,14 @@ from dotenv import load_dotenv
 import sqlite3
 from pop3 import err,log
 import pythoncom
-
+from gui import getResourcePath
 
 
 PATH = os.getcwd() + "\\downloads\\"
 print(PATH)
 INBOXNR = 6
 
-load_dotenv()
+load_dotenv(getResourcePath(".env"))
 
 pythoncom.CoInitialize()
 
@@ -116,14 +116,19 @@ def getEntryIDMail(filterName,outlook,inboxnr=INBOXNR):
     inbox = outlook.GetDefaultFolder(inboxnr)
     print("Folder:",inbox.Name)
     messages = inbox.Items
+    log("count messages:",len(messages))
     for m in messages:
         try:
             sender = m.Sender
         except:
-            pass
+            log("no Sender object in message")
         else:
-            if str(filterName).lower() in str(m.Sender).lower():
+            if str(filterName).strip().lower() in str(m.Sender).strip().lower():
+                log("sender Match!")
                 yield m.EntryID
+            else:
+                log("Sender",m.Sender,"does not match",filterName)
+
     
 
 def downloadAllAttachements(fileEnding,filterName,outlook,path=PATH,inboxnr=INBOXNR):

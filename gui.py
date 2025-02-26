@@ -18,7 +18,6 @@ import pythoncom
 import com
 import os
 import sys
-from dotenv import load_dotenv
 import configparser
 import webbrowser
 

@@ -8,10 +8,12 @@ from dotenv import load_dotenv
 import json
 import inspect
 from pop3 import log,err
+from gui import getResourcePath
 
 
 # load .env file
-load_dotenv()
+
+load_dotenv(getResourcePath(".env"))
 
 def generateRow(_list):
     header = {

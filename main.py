@@ -6,6 +6,7 @@ import com
 import ticket
 from pop3 import log,err
 import pythoncom
+from gui import getResourcePath
 
 from dotenv import load_dotenv
 
@@ -25,7 +26,7 @@ class TableData:
         self.creationDate = creationDate
 
 #load data from .env
-load_dotenv()
+load_dotenv(getResourcePath(".env"))
 filterName = os.getenv('FilterName')
 password = os.getenv('MailPassword')
 PDFNAMEFILTER = os.getenv('PdfNameFilter')
