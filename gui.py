@@ -70,23 +70,37 @@ class App:
 
     def setupToolBar(self):
         menubar = tk.Menu(self.master)
-        settingsMenu = tk.Menu(menubar)
-        settingsMenu.add_command(label="Options",command = lambda: Config(self.master))
+        settingsMenu = tk.Menu(menubar, tearoff=0)
+        settingsMenu.add_command(label="Config",command = lambda: Config(self.master))
 
-        helpMenu = tk.Menu(menubar)
+        helpMenu = tk.Menu(menubar, tearoff=0)
         helpMenu.add_command(label="Credits",command = self.showCredits)
         helpMenu.add_command(label="Help",command = self.showHelp)
 
-        editMenu = tk.Menu(menubar)
+        editMenu = tk.Menu(menubar, tearoff=0)
         editMenu.add_command(label="Forget last Mail",command = com.rmLastEntryIDDB)
+
+        appearanceMenu = tk.Menu(menubar, tearoff=0)
+        appearanceMenu.add_command(label="Dark Mode", command=self.darkMode)
+        appearanceMenu.add_command(label="Light Mode", command=self.lightMode)
 
         menubar.add_cascade(label="Edit",menu=editMenu)
         menubar.add_cascade(label="Settings",menu=settingsMenu)
         menubar.add_cascade(label="About",menu=helpMenu)
+        menubar.add_cascade(label="Appearance",menu=appearanceMenu)
 
         self.master.config(menu=menubar)
+
+    def darkMode(self):
+        sv_ttk.set_theme("dark")
+        customtkinter.set_appearance_mode("dark")
+
+    def lightMode(self):
+        sv_ttk.set_theme("light")
+        customtkinter.set_appearance_mode("light")
+
     def showCredits(self):
-        messagebox.showinfo("Credits","This software was developed by \nJoel Bonini \nand\n Jonathan Wyss \nin santis for internal usage")
+        messagebox.showinfo("Credits","This software was developed by \nJoel Bonini \nand\nJonathan Wyss \nin santis for internal usage")
     def showHelp(self):
         helpWindow = tk.Toplevel(self.master)
         helpWindow.title("Help")
@@ -299,7 +313,7 @@ class Config():
 
         self.window = tk.Toplevel(root)
         self.window.iconbitmap(getResourcePath("jira.ico"))
-        self.window.title("Options")
+        self.window.title("Config")
         self.window.grab_set()
 
         helpText = self._loadHelpText()
@@ -402,7 +416,6 @@ class Config():
 
 if __name__ == "__main__":
     root = tk.Tk()
-    sv_ttk.set_theme("dark")
     objList = [] # dummy need to fix
     app = App(root, objList, "dummyload")
     root.mainloop()
