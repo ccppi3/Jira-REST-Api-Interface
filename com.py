@@ -123,11 +123,16 @@ def getMAPI(outlook):
         outlook = win32com.client.GetActiveObject("Outlook.Application")
     except:
         log("could not get active outlook instance!",level=err.ERROR)
+        return "ERROR MAPI"
     outlook = outlook.GetNameSpace("MAPI")
     return outlook
 
 def getEntryIDMail(filterName,outlook,inboxnr=INBOXNR):
     outlook = getMAPI(outlook)
+    if type(outlook) == str:#ERROR ocured
+        log("getEntryIDMail: ",outlook,level=err.ERROR)
+        yield outlook #pass up the error
+        return #stop generator
     inbox = outlook.GetDefaultFolder(inboxnr)
     print("Folder:",inbox.Name)
     messages = inbox.Items

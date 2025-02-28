@@ -42,8 +42,8 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "C:\Users\jonathan.wyss\Documents\Programmieren\Jira-REST-Api-Interface\dist\gui\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\jonathan.wyss\Documents\Programmieren\Jira-REST-Api-Interface\dist\gui\_internal\*"; DestDir: "{app}\_internal\"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: ".\dist\gui\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: ".\dist\gui\_internal\*"; DestDir: "{app}\_internal\"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
