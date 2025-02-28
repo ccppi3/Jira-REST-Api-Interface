@@ -15,8 +15,21 @@ import tempfile
 
 
 #PATH = os.getcwd() + "\\downloads\\"
-PATH = tempfile.gettempdir()
+PATH = tempfile.gettempdir() + "\\"
+APPLOCAL = os.getenv('LOCALAPPDATA')
+APPLOCAL = os.path.join(os.path.expanduser("~"),"AppData","Local")
+APPNAME = "Jira-Flow"
+APPDIR = os.path.join(APPLOCAL,APPNAME)
+
+if not os.path.exists(APPDIR):
+    os.makedirs(APPDIR)
+    print("path does not exist, create:",APPDIR)
+else:
+    print("path:",APPDIR," already exists")
+APPDIR = APPDIR + "\\"
+
 print(PATH)
+print(APPDIR)
 INBOXNR = 6
 
 load_dotenv(getResourcePath(".env"))
@@ -44,7 +57,7 @@ def init():
     return outlook
 
 def getEntryIDDb(filename="mail.db"):
-    connection = sqlite3.connect(filename)
+    connection = sqlite3.connect(APPDIR + filename)
     cursor = connection.cursor()
 
     cursor.execute("""CREATE TABLE IF NOT EXISTS outlook (
@@ -62,7 +75,7 @@ def getEntryIDDb(filename="mail.db"):
     return entryIDMails
 
 def addEntryIDDb(entryIDList,filename="mail.db"):
-    connection = sqlite3.connect(filename)
+    connection = sqlite3.connect(APPDIR + filename)
     cursor = connection.cursor()
     newAddedList = []
     for uid in entryIDList:
@@ -81,7 +94,7 @@ def addEntryIDDb(entryIDList,filename="mail.db"):
     return newAddedList
     
 def rmEntryIDDB(entryId,filename="mail.db"):
-    connection = sqlite3.connect(filename)
+    connection = sqlite3.connect(APPDIR + filename)
     cursor = connection.cursor()
     cursor.execute("""DELETE FROM outlook WHERE id = ? RETURNING id""",(entryId,))
     log("Remove result:",cursor.fetchone())
@@ -89,7 +102,7 @@ def rmEntryIDDB(entryId,filename="mail.db"):
     connection.close()
     
 def rmLastEntryIDDB(filename="mail.db"):
-    connection = sqlite3.connect(filename)
+    connection = sqlite3.connect(APPDIR + filename)
     cursor = connection.cursor()
     cursor.execute("""SELECT * from outlook ORDER BY rowid DESC LIMIT 1""")
     lastId = cursor.fetchone()
