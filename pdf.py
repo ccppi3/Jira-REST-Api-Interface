@@ -226,6 +226,102 @@ def searchForTable(page,tableNames,pageNr,fileName):
                 tables.pop(i)
     return tables
 
+def detectTableRows(page,table):
+    ty=2
+    tx=2
+    rowNameList=[]
+    border = Border(table.rec.x0-tx,table.rec.y0-ty,table.rec.x0+tx,table.rec.y0+ty,3)
+    log("border",border)
+    #search for vertical line
+    for rect in getRectsInRange(page,border):
+        if isLine(rect) == "vertical":
+            rectStartTable = pymupdf.Rect(rect.x0-tx,rect.y0-ty,rect.x0,rect.y0+ty+1)
+            log("rectStartTable:",transformRect(page,rectStartTable))
+            xLineTitle = nextLineCross(page,rectStartTable,"vertical")
+            #read title
+            borderTitle = Border(xLineTitle.x0,xLineTitle.y0,xLineTitle.x1,xLineTitle.y1+10,5)
+            for titleRec in getTextInRange(page,borderTitle):
+                log("Title:",titleRec)
+                log("Title rec:",transformRect(page,titleRec[1]))
+                yStartRow = titleRec[1].y0
+            log("xlineTitle:",xLineTitle)
+            xLineTitle.y0 = yStartRow
+            xLineTitle.y1 = yStartRow + 5
+            if type(xLineTitle) != bool:
+                log("found xLineTitle:",transformRect(page,xLineTitle))
+                xLineRow = nextLineCross(page,xLineTitle,"horizontal")
+                while type(xLineRow) != bool:
+                    border2 = Border(xLineRow.x0,xLineRow.y0,xLineRow.x1,xLineRow.y1,3)
+                    for rowText in getTextInRange(page,border2):
+                        #TODO detect multiline
+                        rowNameList.append(rowText)
+
+    return rowNameList
+
+#searches in a given direction and detects a line witch is 90 decre to it
+def nextLineCross(page,rect,direction,borderWidth=3):
+    t = 4
+    if direction=="vertical":
+        border = Border(rect.x0-t,rect.y1-t,rect.x0+t,rect.y1+borderWidth,1)
+        for rectNew in getRectsInRange(page,border):
+            if isLine(rectNew) == "horizontal":
+                return rectNew
+        else:
+            return False
+    if direction=="horizontal":
+        border = Border(rect.x1-t,rect.y0-t,rect.x1+t,rect.y0+borderWidth,1)
+        for rectNew in getRectsInRange(page,border):
+            if isLine(rectNew) == "vertical":
+                return rectNew
+        else:
+            return False
+
+def nextConnectedLine(page,rect,direction,borderWidth=3):
+    t = 4
+    if direction=="vertical":
+        border = Border(rect.x0-t,rect.y1-t,rect.x0+t,rect.y1+borderWidth,1)
+        for rectNew in getRectsInRange(page,border):
+            if isLine(rectNew) == "vertical":
+                return rectNew
+        else:
+            return False
+    if direction=="horizontal":
+        border = Border(rect.x1-t,rect.y0-t,rect.x1+t,rect.y0+borderWidth,1)
+        for rectNew in getRectsInRange(page,border):
+            if isLine(rectNew) == "horizontal":
+                return rectNew
+        else:
+            return False
+
+
+def endHorizontalLine(page,rect,borderWidth=3):
+    t=2
+    border2 = Border(rect.x0-t,rect.y0-t,rect.x0+t,rect.y0+borderWidth,1)
+    for rectNew in getRectsInRange(page,border2):
+        if isLine(rectNew) == "horizontal":
+            return endHorizontalLine(page,rectNew)
+    else:#when loop finished
+        return rectNew.x1
+
+            #only follow one horizontal line if there are multiple
+
+
+
+def isLine(rect,thresold = 3):
+    vertical = False
+    horizontal = False
+    if abs(rect.x1  - rect.x0) < thresold: 
+        vertical = True
+    if abs(rect.y1 - rect.y0) < thresold:
+        horizontal = True
+    if horizontal == True and vertical == True:
+        return "dot"
+    elif horizontal == True:
+        return "horizontal"
+    elif vertical == True:
+        return "vertical"
+
+
 def searchTableEnd(page,table_full): #search the table border by moving to the left
     table = table_full.rec
     border = Border(table.x0-10,table.y0-10,table.x0+10,table.y0+10,3)
