@@ -1,4 +1,4 @@
-version = 0.0.12
+version = 0.0.13
 build-pyinstaller:
 	echo "build using using pyinstaller"
 	pyinstaller .\gui.py --windowed --add-data "jira.ico;." --add-data ".env;." --add-data ".\TemplatePayload.json;." --add-data ".\help.txt;." --hiddenimport win32timezone --icon .\jira.ico
