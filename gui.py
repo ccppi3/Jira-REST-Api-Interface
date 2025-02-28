@@ -5,7 +5,6 @@ import time
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
-
 import customtkinter
 import customtkinter as ck
 import CTkToolTip as tt
@@ -23,9 +22,7 @@ import sys
 import configparser
 import webbrowser
 import sv_ttk
-
 from pymupdf.mupdf import UCDN_SCRIPT_OLD_UYGHUR
-
 import pdf
 from pop3 import err as err
 import copy
@@ -42,6 +39,9 @@ class TableData:
 
 class App:
     def __init__(self, master, data, ticketType):
+        # Set initial Color Theme
+        sv_ttk.set_theme("light")
+        customtkinter.set_appearance_mode("light")
         # Initialize variables
         self.master = master
         #self.master.resizable(False, False)
@@ -58,13 +58,13 @@ class App:
         # Create table widget with data
         #self.create_table()
 
-        self.refresh_button = tk.Button(self.master, text="Refresh ⭮", command=self.refresh_button_handler)
+        self.refresh_button = ttk.Button(self.master, text="Refresh ⭮", command=self.refresh_button_handler)
         self.refresh_button.pack(pady=10, padx=10)
 
         self.tabControl = ttk.Notebook(self.master)
         self.tabControl.pack(expand=1, fill="both")
 
-        self.status_label = tk.Label(self.master, text="Status: " + self.status)
+        self.status_label = ttk.Label(self.master, text="Status: " + self.status)
         self.status_label.pack()
 
 
@@ -103,13 +103,14 @@ class App:
         messagebox.showinfo("Credits","This software was developed by \nJoel Bonini \nand\nJonathan Wyss \nin santis for internal usage")
     def showHelp(self):
         helpWindow = tk.Toplevel(self.master)
+        helpWindow.iconbitmap(getResourcePath("jira.ico"))
         helpWindow.title("Help")
 
-        l1 = tk.Label(helpWindow,text="Please refer to the following")
+        l1 = ttk.Label(helpWindow,text="Please refer to the following:")
         l1.pack(padx=10,pady=10)
-        l2 = tk.Label(helpWindow,text="http://wiki.santisedu.local/books/jiraflow",cursor="hand2",relief='raised',foreground='blue')
+        l2 = ttk.Label(helpWindow,text="http://wiki.santisedu.local/books/jiraflow",cursor="hand2",relief='raised',foreground='blue')
         l2.pack(padx=10,pady=10)
-        l3 = tk.Label(helpWindow,text="https://github.com/ccppi3/Jira-REST-Api-Interface",cursor="hand2",relief='raised',foreground='blue')
+        l3 = ttk.Label(helpWindow,text="https://github.com/ccppi3/Jira-REST-Api-Interface",cursor="hand2",relief='raised',foreground='blue')
         l3.pack(padx=10,pady=10)
         l2.bind("<Button-1>",lambda e:self.hyperlinkCallback(l2.cget("text")))
         l3.bind("<Button-1>",lambda e:self.hyperlinkCallback(l3.cget("text")))
@@ -136,8 +137,8 @@ class App:
                 confirm_wrapper = partial(self.make_sure,tab)
 
                 # Buttons
-                tab.confirm_button = tk.Button(tab, text="Create Ticket", width=15, command=confirm_wrapper)
-                tab.confirm_button.grid(row=3, column=0, columnspan=2, pady=10, sticky="W")
+                tab.confirm_button = ttk.Button(tab, text="Create Ticket", width=15, command=confirm_wrapper)
+                tab.confirm_button.grid(row=3, column=0, columnspan=2, pady=5, padx=5, sticky="W")
                 self.create_table(tab,tables[i])
 
     # Handle confirm button click
@@ -232,21 +233,21 @@ class App:
         self.make_sure_window.title("Are you sure? ")
         self.make_sure_window.iconbitmap(getResourcePath("jira.ico"))
         self.make_sure_window.resizable(False, False)
-        self.make_sure_window.geometry("300x100")
+        self.make_sure_window.geometry("280x75")
 
 
         # Display prompt
-        self.make_sure_label = tk.Label(self.make_sure_window, text=f"Are you sure you want to create this Ticket?")
+        self.make_sure_label = ttk.Label(self.make_sure_window, text=f"Are you sure you want to create this Ticket?")
         self.make_sure_label.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
 
         # Confirm button
         confirm_wrapper = partial(self.confirm_button_handler,tab)
-        yes_button = tk.Button(self.make_sure_window, text="Yes", command=confirm_wrapper)
+        yes_button = ttk.Button(self.make_sure_window, text="Yes", command=confirm_wrapper)
         yes_button.grid(row=1, column=0, columnspan=1, padx=5, pady=5, sticky="nsew")
         # Cancel button
         cancel_wrapper = partial(self.cancel,tab)
         self.make_sure_window.protocol("WM_DELETE_WINDOW",cancel_wrapper)
-        cancel_button = tk.Button(self.make_sure_window, text="Cancel", command=cancel_wrapper)
+        cancel_button = ttk.Button(self.make_sure_window, text="Cancel", command=cancel_wrapper)
         cancel_button.grid(row=1, column=1, columnspan=1, padx=5, pady=5, sticky="nsew")
 
     # Close window on cancel
@@ -350,8 +351,8 @@ class Config():
         for objName in _dir(self.tkObjects):
             obj = getattr(self.tkObjects,objName)
 
-        self.buttonSave = tk.Button(self.window,text="Save",command=self._saveConfig)
-        self.buttonSave.grid(row = i+1,column=0)
+        self.buttonSave = ttk.Button(self.window,text="Save",command=self._saveConfig)
+        self.buttonSave.grid(row = i+1,column=0, pady=10, padx=10)
 
 
     def _tkConfigAll(self):
