@@ -11,9 +11,11 @@ import sqlite3
 from pop3 import err,log
 import pythoncom
 from gui import getResourcePath
+import tempfile
 
 
-PATH = os.getcwd() + "\\downloads\\"
+#PATH = os.getcwd() + "\\downloads\\"
+PATH = tempfile.gettempdir()
 print(PATH)
 INBOXNR = 6
 
