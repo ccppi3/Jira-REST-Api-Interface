@@ -6,3 +6,4 @@ pywin32
 pyinstaller
 CTKtooltip
 customtkinter
+sv_ttk
