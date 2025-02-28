@@ -20,6 +20,7 @@ import os
 import sys
 import configparser
 import webbrowser
+import sv_ttk
 
 from pymupdf.mupdf import UCDN_SCRIPT_OLD_UYGHUR
 
@@ -393,6 +394,7 @@ class Config():
 
 if __name__ == "__main__":
     root = tk.Tk()
+    sv_ttk.set_theme("dark")
     objList = [] # dummy need to fix
     app = App(root, objList, "dummyload")
     root.mainloop()

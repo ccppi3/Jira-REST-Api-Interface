@@ -137,7 +137,7 @@ class Ticket:
         if self.ticketType != "arbeitsplatzwechsel":
             payload["fields"][self.requestCustomField] = portalkey + "/" + self.onboardKey  #portalkey / requesttype key
         else:
-            payload["fields"]["customfield_10010"] = portalkey + "/" + self.changeKey
+            payload["fields"][self.requestCustomField] = portalkey + "/" + self.changeKey
         
         #try:
         payload2 = json.dumps(payload)
