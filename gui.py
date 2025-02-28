@@ -58,6 +58,8 @@ class App:
         # Create table widget with data
         #self.create_table()
 
+        self.protocol("WM_DELETE_WINDOW",self.exit)
+
         self.refresh_button = tk.Button(self.master, text="Refresh ⭮", command=self.refresh_button_handler)
         self.refresh_button.pack(pady=10, padx=10)
 
@@ -66,7 +68,9 @@ class App:
 
         self.status_label = tk.Label(self.master, text="Status: " + self.status)
         self.status_label.pack()
-
+    def exit(self):
+        #make sure to also close running threads
+        os._exit(0)
 
     def setupToolBar(self):
         menubar = tk.Menu(self.master)
