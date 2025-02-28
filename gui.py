@@ -5,6 +5,8 @@ import time
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
+
+import customtkinter
 import customtkinter as ck
 import CTkToolTip as tt
 import threading
@@ -46,7 +48,7 @@ class App:
         self.master.title("JiraFlow")
         self.setupToolBar()
         self.master.iconbitmap(getResourcePath("jira.ico"))
-        self.master.geometry("850x500")
+        self.master.geometry("1250x500")
         self.data = data
         self.ticketType = ticketType.lower()
         self.columns = ()
@@ -56,8 +58,8 @@ class App:
         # Create table widget with data
         #self.create_table()
 
-        self.refresh_button = tk.Button(self.master, text="Refresh", command=self.refresh_button_handler)
-        self.refresh_button.pack()
+        self.refresh_button = tk.Button(self.master, text="Refresh ⭮", command=self.refresh_button_handler)
+        self.refresh_button.pack(pady=10, padx=10)
 
         self.tabControl = ttk.Notebook(self.master)
         self.tabControl.pack(expand=1, fill="both")
@@ -120,8 +122,8 @@ class App:
                 confirm_wrapper = partial(self.make_sure,tab)
 
                 # Buttons
-                tab.confirm_button = tk.Button(tab, text="Create Ticket", command=confirm_wrapper)
-                tab.confirm_button.grid(row=3, column=0, columnspan=1, padx=5, pady=5, sticky="nsew")
+                tab.confirm_button = tk.Button(tab, text="Create Ticket", width=15, command=confirm_wrapper)
+                tab.confirm_button.grid(row=3, column=0, columnspan=2, pady=10, sticky="W")
                 self.create_table(tab,tables[i])
 
     # Handle confirm button click
@@ -264,7 +266,11 @@ class App:
         tables.employee_table.configure(yscroll=scrollbar.set)
         # Place scrollbar and table
         tables.employee_table.grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
-        scrollbar.grid(row=2, column=2, sticky="ns", pady=5)
+        scrollbar.grid(row=2, column=2, sticky="nsew", pady=5)
+        # Configure rows and columns to expand them onto whole screen
+        tab.grid_rowconfigure(2, weight=1)  # Expand row 2
+        tab.grid_columnconfigure(0, weight=1)  # expand column 0
+        tab.grid_columnconfigure(1, weight=1)  # expand column 1.
         # Insert table data into table
 
         print("templist:",listOfList)
@@ -292,6 +298,8 @@ class Config():
         listOfEntries = self._loadConfig()
 
         self.window = tk.Toplevel(root)
+        self.window.iconbitmap(getResourcePath("jira.ico"))
+        self.window.title("Options")
         self.window.grab_set()
 
         helpText = self._loadHelpText()
