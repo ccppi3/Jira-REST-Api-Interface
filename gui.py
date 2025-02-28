@@ -171,8 +171,16 @@ class App:
             if type(ret) == list:
                 self.tables = ret
             else:
-                self.status_label.config(text = "Status: " + str(ret))
-                print("[main]",ret)
+                if "ERROR" in ret:
+                    log("fetch_thread:",ret,level=err.ERROR)
+                    self.status_label.config(text = ret)
+                    if "MAPI" in ret:
+                        messagebox.showerror("Error",ret + "\nMaybe outlook is not started?\nPlease make sure Outlook is running at least in the background")
+                    else:
+                        messagebox.showerror("ERROR",ret)
+                else:
+                    self.status_label.config(text = "Status: " + str(ret))
+                    print("[main]",ret)
         callback_queue.put("fetch Thread finished")
 
     # Loading function to diable buttons and display progressbar

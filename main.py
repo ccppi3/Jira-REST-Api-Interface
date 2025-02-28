@@ -54,7 +54,12 @@ def run(outlook):
     uids = com.getEntryIDDb()
     #uidsMail = com.getEntryIDMail(filterName,outlook)
     for ids in com.getEntryIDMail(filterName,outlook):
-        uidsMail.append(ids)
+        if type(ids) == str:#we got an error pass it up the call stack
+            if "ERROR" in ids:
+                log("Error occured in getEntryIDMail:",ids,level=err.ERROR)
+                yield ids
+            else:
+                uidsMail.append(ids)
     
     log("addEntryIDDB uidsMail",uidsMail,"len:",len(uidsMail))
     newAdded = com.addEntryIDDb(uidsMail)
