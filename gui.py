@@ -58,7 +58,7 @@ class App:
         # Create table widget with data
         #self.create_table()
 
-        self.protocol("WM_DELETE_WINDOW",self.exit)
+        self.master.protocol("WM_DELETE_WINDOW",self.exit)
 
         self.refresh_button = ttk.Button(self.master, text="Refresh ⭮", command=self.refresh_button_handler)
         self.refresh_button.pack(pady=10, padx=10)
