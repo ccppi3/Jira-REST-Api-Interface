@@ -9,7 +9,8 @@ for table in listTable:
 input()
 for table in listTable:
     tables.selectTableByObj(table)
-    tables.defRows(["Vorname","zel","Name","Kür-","Kürzel","Abteilung","Abteilung vorher","Abteilung neu","Abteilung Neu","Platz-Nr."])
+    rowList = pdf.detectTableRows(tables.pages.selected,table)
+    tables.defRows(rowList)
     tables.parseTable()
 
 
