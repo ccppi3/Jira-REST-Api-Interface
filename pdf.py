@@ -149,6 +149,8 @@ def getTextInRange(page,border):
 
     #log_json(text_parsed)
 
+def RectToBorder(rect):
+    return Border(rect.x0,rect.y0,rect.x1,rect.y1,1)
 
 def checkBorderDown(page,rectOrigin):#returns the nearest line downwoards to a given rect
     data_drawings = page.get_drawings()
@@ -258,6 +260,8 @@ def detectTableRows(page,table):
 
             for fieldRow in getHeader(page,fields,xLineTable):
                 log("fieldrow:",transformRect(page,fieldRow))
+                for text in getTextInRange(page,RectToBorder(fieldRow)):
+                    log("text",text)
 
     return rowNameList
 
