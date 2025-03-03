@@ -140,8 +140,8 @@ def getTextInRange(page,border):
                 origin = line["spans"][0]["origin"]
                 rectBbox = pymupdf.Rect(origin[0],origin[1],0,0)
                 if border.check(rectBbox.x0,rectBbox.y0):
-                    log("text:",text)
-                    log("rect:",rectBbox)
+                    #log("text:",text)
+                    #log("rect:",rectBbox)
                     yield text,rectBbox
         else:
             log("no lines key found")
@@ -260,8 +260,16 @@ def detectTableRows(page,table):
 
             for fieldRow in getHeader(page,fields,xLineTable):
                 log("fieldrow:",transformRect(page,fieldRow))
-                for text in getTextInRange(page,RectToBorder(fieldRow)):
-                    log("text",text)
+                fullText = ""
+                i=0
+                for text,rect in getTextInRange(page,RectToBorder(fieldRow)):
+                    if i==0:
+                        text = text.strip()
+                        if text:
+                            rowNameList.append(text)
+                            log("   dtext",fullText)
+                    i+=1
+
 
     return rowNameList
 
