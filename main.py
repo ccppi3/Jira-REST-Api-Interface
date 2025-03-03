@@ -88,7 +88,7 @@ def run(outlook):
         else:
             yield ret
 
-    yield "finished parsing"
+    yield "Done"
     yield tableDataList
 
 
