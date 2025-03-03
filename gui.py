@@ -38,7 +38,7 @@ class TableData:
         self.creationDate = creationDate
 
 class App:
-    def __init__(self, master, data, ticketType):
+    def __init__(self, master):
         # Set initial Color Theme
         self.lightMode()
         # Initialize variables
@@ -48,8 +48,6 @@ class App:
         self.setupToolBar()
         self.master.iconbitmap(getResourcePath("jira.ico"))
         self.master.geometry("1250x500")
-        self.data = data
-        self.ticketType = ticketType.lower()
         self.columns = ()
         self.status = ""
         tabs = []
@@ -428,6 +426,5 @@ class Config():
 
 if __name__ == "__main__":
     root = tk.Tk()
-    objList = [] # dummy need to fix
-    app = App(root, objList, "dummyload")
+    app = App(root)
     root.mainloop()
