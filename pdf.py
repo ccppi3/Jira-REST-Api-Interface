@@ -256,17 +256,35 @@ def detectTableRows(page,table):
                 log(transformRect(page,field))
                 fields.append(field)
 
-            getHeader(page,fields,xLineTable)
+            for fieldRow in getHeader(page,fields,xLineTable):
+                log("fieldrow:",transformRect(page,fieldRow))
 
     return rowNameList
 
 def getHeader(page,fields,rectTable,thresold=10):
+    lowestY = None
+    filteredFields = []
     for field in fields:
         if abs(rectSize(rectTable,direction='x') - rectSize(field,direction='x')) > thresold:
             sizeTable = rectSize(rectTable,direction='x')
             sizeField = rectSize(field,direction='x')
             size = sizeTable - sizeField
             log("DataField:",transformRect(page,field),"field size:",sizeField)
+            #find lowest row y
+            if lowestY == None:
+                lowestY = field.y0
+            else:
+                if field.y0 < lowestY:
+                    lowestY = field.y0
+            filteredFields.append(field)
+    log("lowest row:",lowestY)
+
+    fieldsRow = []
+    for field in filteredFields:
+        if round(field.y0,1) == round(lowestY,1):
+            fieldsRow.append(field)
+    return fieldsRow
+    
 
 
 def rectSize(rect,direction="x"):
