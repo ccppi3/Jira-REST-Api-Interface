@@ -150,7 +150,7 @@ def getTextInRange(page,border):
     #log_json(text_parsed)
 
 def RectToBorder(rect):
-    return Border(rect.x0,rect.y0,rect.x1,rect.y1,1)
+    return Border(rect.x0,rect.y0,rect.x1,rect.y1,0)
 
 def checkBorderDown(page,rectOrigin):#returns the nearest line downwoards to a given rect
     data_drawings = page.get_drawings()
@@ -281,7 +281,11 @@ def getHeader(page,fields,rectTable,thresold=10):
             sizeTable = rectSize(rectTable,direction='x')
             sizeField = rectSize(field,direction='x')
             size = sizeTable - sizeField
-            log("DataField:",transformRect(page,field),"field size:",sizeField)
+            fullText = ""
+            for text,rect in getTextInRange(page,RectToBorder(field)):
+                fullText = fullText + text
+            log("DataField:",transformRect(page,field),"field size:",sizeField,"text: ",fullText)
+
             #find lowest row y
             if lowestY == None:
                 lowestY = field.y0

@@ -1,6 +1,6 @@
 import pdf
 
-tables = pdf.Tables("downloads\\Arbeitsplatzeinteilung KW 10 03.03.2025.pdf")
+tables = pdf.Tables("downloads\\Arbeitsplatzeinteilung KW 04 20.01.2025.pdf")
 tables.selectPage(0)
 listTable = tables.setTableNames(["Tabelle 1","NEUEINTRITT","Arbeitsplatzwechsel","NEUEINTRITTE"])
 
@@ -10,6 +10,7 @@ input()
 for table in listTable:
     tables.selectTableByObj(table)
     rowList = pdf.detectTableRows(tables.pages.selected,table)
+    log("rowList:",rowList)
     tables.defRows(rowList)
     tables.parseTable()
 
