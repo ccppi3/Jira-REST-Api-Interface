@@ -40,8 +40,7 @@ class TableData:
 class App:
     def __init__(self, master, data, ticketType):
         # Set initial Color Theme
-        sv_ttk.set_theme("light")
-        customtkinter.set_appearance_mode("light")
+        self.lightMode()
         # Initialize variables
         self.master = master
         #self.master.resizable(False, False)
@@ -137,7 +136,7 @@ class App:
         for i,tab in enumerate(self.tabs):
             #check if table is empty if not create a table inside the tab
             if len(tables[i].data) > 0 and len(vars(tables[i].data[0]))>0:
-                self.tabControl.add(tab, text=str(tables[i].name))
+                self.tabControl.add(tab, text=str(tables[i].name).capitalize() + )
                 confirm_wrapper = partial(self.make_sure,tab)
 
                 # Buttons
@@ -371,13 +370,13 @@ class Config():
         try:
             sections=self.config.sections()
         except:
-            print("Now sections! You ar using an old style .env, please update the config to have a [CONFIG] Section")
+            print("Now sections! You are using an old style .env, please update the config to have a [CONFIG] Section")
             return "Section Error"
         else:
             try:
                 configSection = self.config['CONFIG']
             except:
-                print("You ar using an old style .env, please update the config to have a [CONFIG] Section")
+                print("You are using an old style .env, please update the config to have a [CONFIG] Section")
                 return "Section Error"
             else:
                 for element in configSection:
