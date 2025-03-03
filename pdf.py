@@ -114,7 +114,7 @@ def transformPdfToPymupdf(page,x,y,w,h):
 def transformRect(page,rect):
     return rect * ~page.transformation_matrix
 
-def getRectsInRange(page,border):
+def getRectsInRange(page,border,debug=False):
     data_drawings = page.get_drawings()
     #log_json(data_drawings)
     for strocke in data_drawings:
@@ -122,6 +122,9 @@ def getRectsInRange(page,border):
             rec = strocke["items"]
             rect = rec[0][1]
             if border.check(rect.x0,rect.y0):
+                if debug:
+                    log("RectInRange:")
+                    log_json(strocke)
                 yield rect
 
 
@@ -230,40 +233,58 @@ def detectTableRows(page,table):
     ty=2
     tx=2
     rowNameList=[]
+    fields = []
+
     border = Border(table.rec.x0-tx,table.rec.y0-ty,table.rec.x0+tx,table.rec.y0+ty,3)
     log("border",border)
     #search for vertical line
-    for rect in getRectsInRange(page,border):
+    for rect in getRectsInRange(page,border,debug=True):
         if isLine(rect) == "vertical":
             rectStartTable = pymupdf.Rect(rect.x0-tx,rect.y0-ty,rect.x0,rect.y0+ty+1)
             log("rectStartTable:",transformRect(page,rectStartTable))
-            xLineTitle = nextLineCross(page,rectStartTable,"vertical")
-            #read title
-            borderTitle = Border(xLineTitle.x0,xLineTitle.y0,xLineTitle.x1,xLineTitle.y1+10,5)
-            for titleRec in getTextInRange(page,borderTitle):
-                log("Title:",titleRec)
-                log("Title rec:",transformRect(page,titleRec[1]))
-                yStartRow = titleRec[1].y0
-            log("xlineTitle:",xLineTitle)
-            xLineTitle.y0 = yStartRow
-            xLineTitle.y1 = yStartRow + 5
-            if type(xLineTitle) != bool:
-                log("found xLineTitle:",transformRect(page,xLineTitle))
-                xLineRow = nextLineCross(page,xLineTitle,"horizontal")
-                while type(xLineRow) != bool:
-                    border2 = Border(xLineRow.x0,xLineRow.y0,xLineRow.x1,xLineRow.y1,3)
-                    for rowText in getTextInRange(page,border2):
-                        #TODO detect multiline
-                        rowNameList.append(rowText)
+            xLineTable = nextLineCross(page,rectStartTable,"vertical")
+            log("xLineTable:",transformRect(page,xLineTable))
+            #borderTitle = Border(xLineTable.x0,xLineTable.y0,xLineTable.x1,xLineTable.y1+10,5)
+            rectBottomTable = pymupdf.Rect(xLineTable.x0,xLineTable.y1,xLineTable.x1,table.rec.y1)
+            xLineBottomTable = nextLineCross(page,rectBottomTable,"vertical")
+            log("xLBottomTable",transformRect(page,xLineBottomTable))
+            
+            for field in getFieldsInRange(\
+                    page,pymupdf.Rect(\
+                    xLineTable.x0, xLineTable.y1, xLineTable.x1,table.rec.y1 \
+                    )):
+                log(transformRect(page,field))
+                fields.append(field)
 
+            getHeader(page,fields,xLineTable)
     return rowNameList
 
-#searches in a given direction and detects a line witch is 90 decre to it
+def getHeader(page,fields,rectTable,thresold=10):
+    for field in fields:
+        if abs(rectSize(rectTable,direction='x') - rectSize(field,direction='x')) > thresold:
+            sizeTable = rectSize(rectTable,direction='x')
+            sizeField = rectSize(field,direction='x')
+            size = sizeTable - sizeField
+            log("DataField:",transformRect(page,field),"calculate size:",size,"table:",sizeTable,"field:",sizeField)
+
+def rectSize(rect,direction="x"):
+    if direction=='x':
+        return abs(rect.x1 - rect.x0)
+    if direction=='y':
+        return abs(rect.y1 - rect.y0)
+
+def getFieldsInRange(page,rect,borderWidth=3):
+    t=2
+    border = Border(rect.x0-t,rect.y0-t,rect.x1+t,rect.y1+borderWidth,1)
+    for field in getRectsInRange(page,border):
+        if not isLine(field):
+            yield field
+#searches in a given direction and detects a line witch is 90 degree to it
 def nextLineCross(page,rect,direction,borderWidth=3):
-    t = 4
+    t = 2
     if direction=="vertical":
-        border = Border(rect.x0-t,rect.y1-t,rect.x0+t,rect.y1+borderWidth,1)
-        for rectNew in getRectsInRange(page,border):
+        border = Border(rect.x0-t,rect.y0-t,rect.x1+t,rect.y1+borderWidth,1)
+        for rectNew in getRectsInRange(page,border,debug=False):
             if isLine(rectNew) == "horizontal":
                 return rectNew
         else:
