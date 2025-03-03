@@ -134,7 +134,7 @@ class App:
         for i,tab in enumerate(self.tabs):
             #check if table is empty if not create a table inside the tab
             if len(tables[i].data) > 0 and len(vars(tables[i].data[0]))>0:
-                self.tabControl.add(tab, text=str(tables[i].name).capitalize())
+                self.tabControl.add(tab, text=str(tables[i].name).capitalize() + " - " + str(table.creationDate.strftime("%x")))
                 confirm_wrapper = partial(self.make_sure,tab)
 
                 # Buttons
