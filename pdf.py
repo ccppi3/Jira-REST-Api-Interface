@@ -257,6 +257,7 @@ def detectTableRows(page,table):
                 fields.append(field)
 
             getHeader(page,fields,xLineTable)
+
     return rowNameList
 
 def getHeader(page,fields,rectTable,thresold=10):
@@ -265,7 +266,8 @@ def getHeader(page,fields,rectTable,thresold=10):
             sizeTable = rectSize(rectTable,direction='x')
             sizeField = rectSize(field,direction='x')
             size = sizeTable - sizeField
-            log("DataField:",transformRect(page,field),"calculate size:",size,"table:",sizeTable,"field:",sizeField)
+            log("DataField:",transformRect(page,field),"field size:",sizeField)
+
 
 def rectSize(rect,direction="x"):
     if direction=='x':
