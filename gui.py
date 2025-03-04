@@ -369,11 +369,37 @@ class Config():
         for slave in self.window.grid_slaves():
             slave.grid(padx=10,pady=10)
         
+    def _writeDefaultConfig(self):
+        cfg = f"""
+            [CONFIG]
+            FilterName = Sender Name
+                
+            PdfNameFilter = "Arbeitsplatzeint"
+                
+            EMail = "max.muster@santismail.ch"
+                
+            TOKEN = ""
+                
+            IssueUrl = "https://santis.atlassian.net/rest/api/3/issue"
+                
+            RequestTypeField = "customfield_10010"
+                
+            RequestOnBoardKey = "newhires"
+                
+            RequestChangeKey = "d3218f88-1017-4215-8b9c-194ea96ea6dd"
+            """        
+        with open(com.getAppDir() + "config", 'x') as file:
+            file.write(cfg)
+
     def _loadConfig(self):
         configList=[]
         self.config = configparser.ConfigParser()
         self.config.optionxform = str
-        self.config.read(getResourcePath(".env"))
+        if not os.path.isfile(com.getAppDir() + "config"):
+            print("config file does not exist! create a default one")
+            self._writeDefaultConfig()
+
+        self.config.read(com.getAppDir() + "config")
         try:
             sections=self.config.sections()
         except:

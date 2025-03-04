@@ -13,7 +13,11 @@ from gui import getResourcePath
 
 # load .env file
 
-load_dotenv(getResourcePath(".env"))
+APPLOCAL = os.path.join(os.path.expanduser("~"),"AppData","Local")
+APPNAME = "Jira-Flow"
+APPDIR = os.path.join(APPLOCAL,APPNAME)
+APPDIR = APPDIR + "\\"
+load_dotenv(APPDIR + "config")
 
 def generateRow(_list):
     header = {

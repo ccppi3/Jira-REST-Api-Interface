@@ -32,9 +32,20 @@ print(PATH)
 print(APPDIR)
 INBOXNR = 6
 
-load_dotenv(getResourcePath(".env"))
+load_dotenv(APPDIR + "config")
 
 pythoncom.CoInitialize()
+
+def getAppDir():
+    path = tempfile.gettempdir() + "\\"
+    applocal = os.getenv('LOCALAPPDATA')
+    applocal = os.path.join(os.path.expanduser("~"),"AppData","Local")
+    appname = "Jira-Flow"
+    appdir = os.path.join(applocal,appname)
+    appdir += "\\"
+    return appdir
+
+
 
 
 
