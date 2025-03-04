@@ -165,10 +165,14 @@ class Ticket:
             response = requests.post(self.url, data=payload, headers=self.headers, auth=self.auth)
             print(response.status_code)
             print(response.text)
-            self.id = response.json()["id"]
-            url = response.json()["self"]
-            yield "sending Attachement"
-            self.sendAttachment(url)
+            try:
+                self.id = response.json()["id"]
+            except:
+                yield "no valid response"
+            else:
+                url = response.json()["self"]
+                yield "sending Attachement"
+                self.sendAttachment(url)
             print("Response 1: ", response)
             print(response.text)
             yield response.status_code

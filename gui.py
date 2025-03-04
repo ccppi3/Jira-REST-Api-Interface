@@ -165,6 +165,12 @@ class App:
                     log("User aborted sending",level=err.INFO)
                     callback_queue.put("Post Thread finished")
             else: #when returns type is intiger we have finised
+                if type(status) == int:
+                    if status == 401:
+                        messagebox.showerror("Error",str(status) + "\nAccess to Jira was denied, is your jira token valid?")
+                    elif status >= 300:
+                        messagebox.showerror("Error",str(status) + "\nHttpError")
+
                 callback_queue.put("destroy")
 
     def fetch_thread(self,callback_queue,outlook):
