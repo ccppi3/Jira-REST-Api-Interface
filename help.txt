@@ -5,7 +5,7 @@ text=This defines what the PdfName should include to get passed to the Parser.
 [EMail]
 text=This is used to set the email of the creator on the Jira ticket.
 [TOKEN]
-text=This is the jira access token for the rest api.
+text=This is the jira access token for the rest api. https://id.atlassian.com/manage-profile/security/api-tokens
 [IssueUrl]
 text=This is the endpoint where the issues are created.
 [RequestTypeField]

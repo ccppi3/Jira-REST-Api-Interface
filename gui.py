@@ -113,8 +113,11 @@ class App:
         l2.pack(padx=10,pady=10)
         l3 = ttk.Label(helpWindow,text="https://github.com/ccppi3/Jira-REST-Api-Interface",cursor="hand2",relief='raised',foreground='blue')
         l3.pack(padx=10,pady=10)
+        l4 = ttk.Label(helpWindow,text="https://id.atlassian.com/manage-profile/security/api-tokens",cursor="hand2",relief='raised',foreground='blue')
+        l4.pack(padx=10,pady=10)
         l2.bind("<Button-1>",lambda e:self.hyperlinkCallback(l2.cget("text")))
         l3.bind("<Button-1>",lambda e:self.hyperlinkCallback(l3.cget("text")))
+        l4.bind("<Button-1>",lambda e:self.hyperlinkCallback(l4.cget("text")))
 
     def hyperlinkCallback(self,url):
         webbrowser.open_new_tab(url)
