@@ -269,17 +269,14 @@ def detectTableRows(page,table):
                 fullText = ""
                 i=0
                 for text,rect,font,size in getTextInRange(page,RectToBorder(fieldRow)):
-                    if i==0:
-                        text = text.strip()
-                        if text:
-                            splitText = cutTextOverRect(page,fieldRow,text,font,size)
-                            if not splitText:
-                                rowNameList.append(text)
-                            else:
-                                for txt in splitText:
-                                    rowNameList.append(txt)
-                            log("   dtext",fullText)
-                    i+=1
+                    text = text.strip()
+                    if text:
+                        splitText = cutTextOverRect(page,fieldRow,text,font,size)
+                        if not splitText:
+                            rowNameList.append(text)
+                        else:
+                            for txt in splitText:
+                                rowNameList.append(txt)
 
 
     return rowNameList
@@ -296,7 +293,7 @@ def getHeader(page,fields,rectTable,thresold=10):
             for text,rect,font,size in getTextInRange(page,RectToBorder(field),debug=True):
                 fullText = fullText + text
 
-            log("DataField:",transformRect(page,field),"field size:",sizeField,"text: ",fullText)
+            log("DataField:",transformRect(page,field),"field size:",sizeField,"text: ",text)
 
             #find lowest row y
             if lowestY == None:
