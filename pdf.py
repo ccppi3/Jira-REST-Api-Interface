@@ -246,7 +246,7 @@ def detectTableRows(page,table):
     border = Border(table.rec.x0-tx,table.rec.y0-ty,table.rec.x0+tx,table.rec.y0+ty,3)
     log("border",border)
     #search for vertical line
-    for rect in getRectsInRange(page,border,debug=True):
+    for rect in getRectsInRange(page,border,debug=False):
         if isLine(rect) == "vertical":
             rectStartTable = pymupdf.Rect(rect.x0-tx,rect.y0-ty,rect.x0,rect.y0+ty+1)
             log("rectStartTable:",transformRect(page,rectStartTable))
@@ -290,7 +290,7 @@ def getHeader(page,fields,rectTable,thresold=10):
             sizeField = rectSize(field,direction='x')
             size = sizeTable - sizeField
             fullText = ""
-            for text,rect,font,size in getTextInRange(page,RectToBorder(field),debug=True):
+            for text,rect,font,size in getTextInRange(page,RectToBorder(field),debug=False):
                 fullText = fullText + text
 
             log("DataField:",transformRect(page,field),"field size:",sizeField,"text: ",text)
