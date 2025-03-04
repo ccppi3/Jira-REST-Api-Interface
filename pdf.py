@@ -128,7 +128,7 @@ def getRectsInRange(page,border,debug=False):
                 yield rect
 
 
-def getTextInRange(page,border):
+def getTextInRange(page,border,debug=False):
     data_text = page.get_text("json",sort=True)
 
     text_parsed = json.loads(data_text)
@@ -140,9 +140,15 @@ def getTextInRange(page,border):
                 origin = line["spans"][0]["origin"]
                 rectBbox = pymupdf.Rect(origin[0],origin[1],0,0)
                 if border.check(rectBbox.x0,rectBbox.y0):
+                    font=line["spans"][0]["font"]
+                    size=line["spans"][0]["size"]
+                    if debug:
+                        log("----",text,"----")
+                        log("%%%%",font,"%%%%")
+                        log_json(line)
                     #log("text:",text)
                     #log("rect:",rectBbox)
-                    yield text,rectBbox
+                    yield text,rectBbox,font,size
         else:
             log("no lines key found")
             
@@ -262,11 +268,16 @@ def detectTableRows(page,table):
                 log("fieldrow:",transformRect(page,fieldRow))
                 fullText = ""
                 i=0
-                for text,rect in getTextInRange(page,RectToBorder(fieldRow)):
+                for text,rect,font,size in getTextInRange(page,RectToBorder(fieldRow)):
                     if i==0:
                         text = text.strip()
                         if text:
-                            rowNameList.append(text)
+                            splitText = cutTextOverRect(page,fieldRow,text,font,size)
+                            if not splitText:
+                                rowNameList.append(text)
+                            else:
+                                for txt in splitText:
+                                    rowNameList.append(txt)
                             log("   dtext",fullText)
                     i+=1
 
@@ -282,8 +293,9 @@ def getHeader(page,fields,rectTable,thresold=10):
             sizeField = rectSize(field,direction='x')
             size = sizeTable - sizeField
             fullText = ""
-            for text,rect in getTextInRange(page,RectToBorder(field)):
+            for text,rect,font,size in getTextInRange(page,RectToBorder(field),debug=True):
                 fullText = fullText + text
+
             log("DataField:",transformRect(page,field),"field size:",sizeField,"text: ",fullText)
 
             #find lowest row y
@@ -297,10 +309,27 @@ def getHeader(page,fields,rectTable,thresold=10):
 
     fieldsRow = []
     for field in filteredFields:
-        if round(field.y0,1) == round(lowestY,1):
+        if round(field.y0,1) == round(lowestY,1):#is it in arow?
             fieldsRow.append(field)
     return fieldsRow
-    
+
+def cutTextOverRect(page,rect,text,font,size=9):
+    _len=0
+    size = rectSize(rect,direction='x')
+    try:
+        font = pymupdf.Font(font)
+    except:
+        log("font",font,"not found, using helv")
+        font = pymupdf.Font("helv")
+
+    if len(text.strip().split(" "))>1:
+        _len = font.text_length(text)
+        if size - _len < -10:
+            log("text oversized!",level=err.ERROR)
+            log("font:",font)
+            log("len of field:",size,"len of word:", _len,"text:",text)
+            log("len split",len(text.strip().split(" ")))
+            return text.strip().split(" ") 
 
 
 def rectSize(rect,direction="x"):
@@ -516,7 +545,7 @@ class Tables:
                             log("getRectsInRange:",string.strip())
                             listA.append(string.strip())
 
-                    for i,[text,rect] in enumerate(getTextInRange(page,border)):
+                    for i,[text,rect,font,size] in enumerate(getTextInRange(page,border)):
                         string = text
                         log("rect(",i,"):",transformRect(page,rect))
                         if string.strip():
