@@ -211,7 +211,7 @@ def _trimNewAdded(newAddedList,outlook):#get attachements, on double entries, ch
             if att.path not in newFileList:
                 past = att.creationDate
                 delta = datetime.now(timezone.utc) - past
-                if delta.days < 10:#ignore if older than half a year
+                if delta.days < 150:#ignore if older than half a year
                     newFileList.append(att)
                 log("Date:",att.creationDate)
             else:
@@ -221,7 +221,7 @@ def _trimNewAdded(newAddedList,outlook):#get attachements, on double entries, ch
                             newFileList.pop(i)
                             past = att.creationDate
                             delta = datetime.now(timezone.utc) - past
-                            if delta.days < 10:#ignore if older than half a year
+                            if delta.days < 150:#ignore if older than half a year
                                 newFileList.append(att)
                             break
     return newFileList
