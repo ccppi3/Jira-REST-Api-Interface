@@ -1,6 +1,6 @@
 import pdf
 
-tables = pdf.Tables("downloads\\Arbeitsplatzeinteilung KW 02 06.01.2025.pdf")
+tables = pdf.Tables("tmp.pdf")
 tables.selectPage(0)
 listTable = tables.setTableNames(["Tabelle 1","NEUEINTRITT","Arbeitsplatzwechsel","NEUEINTRITTE"])
 
