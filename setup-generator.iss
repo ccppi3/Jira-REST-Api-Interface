@@ -31,6 +31,7 @@ DisableProgramGroupPage=yes
 ; Uncomment the following line to run in non administrative install mode (install for current user only).
 ;PrivilegesRequired=lowest
 OutputBaseFilename=Jira-Flow-{#MyAppVersion}
+Compression=zip
 SolidCompression=yes
 WizardStyle=modern
 
