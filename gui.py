@@ -447,15 +447,15 @@ class Config():
             self.config.set('CONFIG',objName,obj.get('1.0',tk.END))
         
         try:
-            with open(getResourcePath(".env"),'w') as configFile:
+            with open(com.getAppDir() + "config",'w') as configFile:
                       self.config.write(configFile)
-        except:
+        except Exception as e:
             print("ERROR writing .env file!")
-            messagebox.showerror("Config","Config has not been written")
+            messagebox.showerror("Config","Config has not been written\n" + str(e))
             return "error writing file"
         else:
             print("Wrote .env file")
-            messagebox.showinfo("Config","Config sucessfull saved")
+            messagebox.showinfo("Config","Config sucessfull saved\n"+str(com.getAppDir() + "config"))
      
 
 
