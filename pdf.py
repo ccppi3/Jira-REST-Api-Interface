@@ -112,7 +112,10 @@ def transformPdfToPymupdf(page,x,y,w,h):
     return pymupdf.Rect(x,y,w,h) * ~page.transformation_matrix
 
 def transformRect(page,rect):
-    return rect * ~page.transformation_matrix
+    if rect:
+        return rect * ~page.transformation_matrix
+    else:
+        return False
 
 def getRectsInRange(page,border,debug=False):
     data_drawings = page.get_drawings()
@@ -238,19 +241,35 @@ def searchForTable(page,tableNames,pageNr,fileName):
     return tables
 
 def detectTableRows(page,table):
-    ty=2
+    ty=4
     tx=2
     rowNameList=[]
     fields = []
 
     border = Border(table.rec.x0-tx,table.rec.y0-ty,table.rec.x0+tx,table.rec.y0+ty,3)
-    log("border",border)
+    log("border",table.rec.x0," ",1190-table.rec.y0)
     #search for vertical line
     for rect in getRectsInRange(page,border,debug=False):
         if isLine(rect) == "vertical":
             rectStartTable = pymupdf.Rect(rect.x0-tx,rect.y0-ty,rect.x0,rect.y0+ty+1)
             log("rectStartTable:",transformRect(page,rectStartTable))
             xLineTable = nextLineCross(page,rectStartTable,"vertical")
+            log("table size:",table.rec.x1)
+
+            #edge case handling fine tuned different settings
+            if xLineTable == False:
+                xLineTable = pymupdf.Rect(rect.x0-tx,rect.y0,table.rec.x1 *2,rect.y0)
+                temp = xLineTable
+                while temp != False:
+                    temp = nextConnectedLine(page,temp,direction="horizontal",t=10)
+                    log("next connected line")
+                    if temp != False:
+                        xLineTable = temp
+                    log("xLineTable2:",xLineTable)
+                xLineTable.x0 = rect.x0-tx
+
+
+
             log("xLineTable:",transformRect(page,xLineTable))
             #borderTitle = Border(xLineTable.x0,xLineTable.y0,xLineTable.x1,xLineTable.y1+10,5)
             rectBottomTable = pymupdf.Rect(xLineTable.x0,xLineTable.y1,xLineTable.x1,table.rec.y1)
@@ -359,8 +378,7 @@ def nextLineCross(page,rect,direction,borderWidth=3):
         else:
             return False
 
-def nextConnectedLine(page,rect,direction,borderWidth=3):
-    t = 4
+def nextConnectedLine(page,rect,direction,borderWidth=3,t=4):
     if direction=="vertical":
         border = Border(rect.x0-t,rect.y1-t,rect.x0+t,rect.y1+borderWidth,1)
         for rectNew in getRectsInRange(page,border):
@@ -369,12 +387,16 @@ def nextConnectedLine(page,rect,direction,borderWidth=3):
         else:
             return False
     if direction=="horizontal":
-        border = Border(rect.x1-t,rect.y0-t,rect.x1+t,rect.y0+borderWidth,1)
+        border = Border(rect.x1-t,rect.y0-borderWidth,rect.x1+t,rect.y1+borderWidth,1)
         for rectNew in getRectsInRange(page,border):
+            log("rects in range:",rectNew)
             if isLine(rectNew) == "horizontal":
                 return rectNew
         else:
+            log("no next line found, border:",border)
             return False
+    else:
+        log("direction unkown argument:",direction,level=err.ERROR)
 
 
 def endHorizontalLine(page,rect,borderWidth=3):
