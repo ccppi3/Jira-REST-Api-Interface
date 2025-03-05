@@ -7,6 +7,7 @@ import ticket
 from pop3 import log,err
 import pythoncom
 from gui import getResourcePath
+from datetime import datetime, timedelta,date,timezone
 
 from dotenv import load_dotenv
 
@@ -18,15 +19,16 @@ def removeIndexesFromList(indexListRemove,_list):
             log("indexListRemove:",indexListRemove,"\nlist:",_list," len:",len(_list),"\ni:",i)
 
 class TableData:
-    def __init__(self,name,data,fileName,pageNumber,creationDate):
+    def __init__(self,name,data,fileName,pageNumber,creationDate,company):
         self.name = name
         self.data = data
         self.fileName = fileName
         self.pageNumber = pageNumber
         self.creationDate = creationDate
+        self.company = company
 
 #load data from .env
-load_dotenv(getResourcePath(".env"))
+load_dotenv(com.getAppDir() + "config")
 filterName = os.getenv('FilterName')
 password = os.getenv('MailPassword')
 PDFNAMEFILTER = os.getenv('PdfNameFilter')
@@ -103,6 +105,13 @@ def _runPdfParser(newFileList): #helper function witch wraps all the parsing cal
         tables = pdf.Tables(file.path)
         countPage = tables.countPages()
         for pageNr in range(countPage):
+            if pageNr == 0:
+                company = "Allpower"
+            elif pageNr == 1:
+                company = "Santis"
+            else:
+                company = "Unknown"
+
             log("Parse page ",pageNr," of file ",file,level=err.NONE)
             yield "Parse:" + str(file).split("\\")[len(str(file).split("\\"))-1] + " Page " + str(pageNr)
             tables.selectPage(pageNr)
@@ -117,7 +126,7 @@ def _runPdfParser(newFileList): #helper function witch wraps all the parsing cal
                 for tbl in tables.getObjectsFromTable():
                     objcpy = copy.deepcopy(tbl) # make a real copy of the data, else the data would be overwritten by the next page, as the data would be parsed as reference
                     objList.append(objcpy)
-                tableDataList.append(TableData(table.name,objList,table.fileName,table.pageNumber,file.creationDate))
+                tableDataList.append(TableData(table.name,objList,table.fileName,table.pageNumber,file.creationDate,company))
     yield tableDataList
 
 def tablesToTicket(tableDataList,check=True): #tackes the tabledata and creates a ticket for each table
@@ -133,11 +142,11 @@ def tablesToTicket(tableDataList,check=True): #tackes the tabledata and creates 
             tempObjs.append(entry)
         print("-------------------------------------\n")
         if "arbeitsplatzwechsel" in str(table.name).lower():
-            ticketTable = ticket.Ticket(table,tempObjs,filename,"Allpower","arbeitsplatzwechsel")
+            ticketTable = ticket.Ticket(table,tempObjs,filename,table.company,"arbeitsplatzwechsel")
         elif "neueintritte" in str(table.name).lower():
-            ticketTable = ticket.Ticket(table,tempObjs,filename,"Allpower","neueintritt")
+            ticketTable = ticket.Ticket(table,tempObjs,filename,table.company,"neueintritt")
         elif "neueintritt" in str(table.name).lower():
-            ticketTable = ticket.Ticket(table,tempObjs,filename,"Allpower","neueintritte")
+            ticketTable = ticket.Ticket(table,tempObjs,filename,table.company,"neueintritte")
         ticketTable.createTicket(check=False)
 
 def tableToTicket(table,check=True):
@@ -151,11 +160,11 @@ def tableToTicket(table,check=True):
             tempObjs.append(entry)
         print("-------------------------------------\n")
         if "arbeitsplatzwechsel" in str(table.name).lower():
-            ticketTable = ticket.Ticket(table,tempObjs,filename,"Allpower","arbeitsplatzwechsel")
+            ticketTable = ticket.Ticket(table,tempObjs,filename,table.company,"arbeitsplatzwechsel")
         elif "neueintritte" in str(table.name).lower():
-            ticketTable = ticket.Ticket(table,tempObjs,filename,"Allpower","neueintritt")
+            ticketTable = ticket.Ticket(table,tempObjs,filename,table.company,"neueintritt")
         elif "neueintritt" in str(table.name).lower():
-            ticketTable = ticket.Ticket(table,tempObjs,filename,"Allpower","neueintritte")
+            ticketTable = ticket.Ticket(table,tempObjs,filename,table.company,"neueintritte")
         for status in ticketTable.createTicket(check=False):
             yield status
     
@@ -189,14 +198,20 @@ def _trimNewAdded(newAddedList,outlook):#get attachements, on double entries, ch
         log("new uid to parse:",uid)
         for att in com.getAttachements(uid,outlook):
             if att.path not in newFileList:
-                newFileList.append(att)
+                past = att.creationDate
+                delta = datetime.now(timezone.utc) - past
+                if delta.days < 10:#ignore if older than half a year
+                    newFileList.append(att)
                 log("Date:",att.creationDate)
             else:
                 for i,att2 in enumerate(newFileList):
                     if att.path == att2.path:
                         if att.creationDate > att2.creationDate:
                             newFileList.pop(i)
-                            newFileList.append(att)
+                            past = att.creationDate
+                            delta = datetime.now(timezone.utc) - past
+                            if delta.days < 10:#ignore if older than half a year
+                                newFileList.append(att)
                             break
     return newFileList
 
