@@ -13,5 +13,5 @@ zip:
 	powershell Compress-Archive -Force -Path .\dist\ -DestinationPath .\releases\Jira-Bridge-$(version).zip
 installer: build-pyinstaller
 	iscc /dMyAppVersion=$(version) .\setup-generator.iss
-installer: build-pyinstaller-debug
+installer-debug: build-pyinstaller-debug
 	iscc /dMyAppVersion=$(version) .\setup-generator.iss
