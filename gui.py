@@ -470,6 +470,7 @@ class Config():
         else:
             print("Wrote .env file")
             messagebox.showinfo("Config","Config sucessfull saved\n"+str(com.getAppDir() + "config"))
+            load_dotenv(com.getAppDir() + "config")
      
 
 
