@@ -26,6 +26,17 @@ class TableData:
         self.pageNumber = pageNumber
         self.creationDate = creationDate
         self.company = company
+        self.pdfNameDate = self.extractFilenameDate()
+
+    def extractFilenameDate(self):
+        fileNameSplit = self.fileName.split(' ')
+        evDate = fileNameSplit[len(fileNameSplit)-1]
+        if len(evDate.split('.')) > 2:
+            dotList = evDate.split('.')
+            dotList = dotList[0:len(dotList)-1]
+            evDate = '.'.join(dotList)
+        return evDate
+
 
 #load data from .env
 load_dotenv(com.getAppDir() + "config")

@@ -137,7 +137,7 @@ class App:
         for i,tab in enumerate(self.tabs):
             #check if table is empty if not create a table inside the tab
             if len(tables[i].data) > 0 and len(vars(tables[i].data[0]))>0:
-                self.tabControl.add(tab, text=str(tables[i].name).capitalize() + " \n " + str(tables[i].creationDate.strftime("%x")))
+                self.tabControl.add(tab, text=str(tables[i].name).capitalize() + " \n " + str(tables[i].pdfNameDate))
                 confirm_wrapper = partial(self.make_sure,tab)
 
                 # Buttons
