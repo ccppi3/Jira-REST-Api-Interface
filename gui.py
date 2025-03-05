@@ -138,19 +138,26 @@ class App:
             #check if table is empty if not create a table inside the tab
             if len(tables[i].data) > 0 and len(vars(tables[i].data[0]))>0:
                 self.tabControl.add(tab, text=str(tables[i].name).capitalize() + " \n " + str(tables[i].creationDate.strftime("%x")))
-                confirm_wrapper = partial(self.make_sure,tab)
+                confirm_wrapper = partial(self.make_sure,tab, "create")
+                delete_wrapper = partial(self.make_sure, tab, "delete")
 
                 # Buttons
                 tab.confirm_button = ttk.Button(tab, text="Create Ticket", width=15, command=confirm_wrapper)
                 tab.confirm_button.grid(row=3, column=0, columnspan=2, pady=5, padx=5, sticky="W")
+                tab.delete_button = ttk.Button(tab, text="Delete Ticket", width=15, command=delete_wrapper)
+                tab.delete_button.grid(row=3, column=1, columnspan=2, pady=5, padx=5, sticky="E")
                 self.create_table(tab,tables[i])
 
     # Handle confirm button click
-    def confirm_button_handler(self,tab):
+    def confirm_create_button_handler(self,tab):
         # Close confirm window
         self.make_sure_window.destroy()
         self.loadingThread = threading.Thread(target=self.loading,args=(self.post_thread,tab))
         self.loadingThread.start()
+
+    def confirm_delete_button_handler(self, tab):
+        self.make_sure_window.destroy()
+        tab.destroy()
 
     # Handle refresh button click
     def refresh_button_handler(self):
@@ -223,6 +230,7 @@ class App:
         # Reavtivate buttons
         try:
             tab.confirm_button.config(state=tk.NORMAL)
+            tab.delete_button.confi(state=tk.NORMAL)
         except:
             log("noTabs")
         if msg == "destroy":
@@ -234,10 +242,11 @@ class App:
         self.status_bar.destroy()
 
     # Confirm Winow
-    def make_sure(self,tab):
+    def make_sure(self,tab,type):
         self.refresh_button.config(state=tk.DISABLED)
         if tab:
             tab.confirm_button.config(state=tk.DISABLED)
+            tab.delete_button.config(state=tk.DISABLED)
         # Create window
         self.make_sure_window = tk.Toplevel(self.master)
         self.make_sure_window.title("Are you sure? ")
@@ -247,13 +256,17 @@ class App:
 
 
         # Display prompt
-        self.make_sure_label = ttk.Label(self.make_sure_window, text=f"Are you sure you want to create this Ticket?")
+        self.make_sure_label = ttk.Label(self.make_sure_window, text=f"Are you sure you want to {type} this Ticket?")
         self.make_sure_label.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
 
         # Confirm button
-        confirm_wrapper = partial(self.confirm_button_handler,tab)
+        if type == "create":
+            confirm_wrapper = partial(self.confirm_create_button_handler,tab)
+        else:
+            confirm_wrapper = partial(self.confirm_delete_button_handler, tab)
         yes_button = ttk.Button(self.make_sure_window, text="Yes", command=confirm_wrapper)
         yes_button.grid(row=1, column=0, columnspan=1, padx=5, pady=5, sticky="nsew")
+
         # Cancel button
         cancel_wrapper = partial(self.cancel,tab)
         self.make_sure_window.protocol("WM_DELETE_WINDOW",cancel_wrapper)
@@ -263,6 +276,7 @@ class App:
     # Close window on cancel
     def cancel(self,tab):
         tab.confirm_button.config(state=tk.NORMAL)
+        tab.delete_button.config(state=tk.NORMAL)
         self.refresh_button.config(state=tk.NORMAL)
         self.make_sure_window.destroy()
 
