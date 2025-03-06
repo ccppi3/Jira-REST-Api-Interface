@@ -14,6 +14,7 @@ import inspect
 from pop3 import log,err
 import pythoncom, com
 import os, sys
+from enum import Enum
 import configparser
 import webbrowser
 import sv_ttk
@@ -24,6 +25,11 @@ from dotenv import load_dotenv
 # Inizialize COM-Interface
 pythoncom.CoInitialize()
 
+class ThemeState(Enum):
+    LIGHT = 1
+    DARK = 2
+
+themeState = ThemeState.LIGHT
 # App Class
 class App:
     def __init__(self, master):
@@ -32,7 +38,7 @@ class App:
         # Initialize variables
         self.master = master
         self.master.title("JiraFlow")
-        self.setupCtkToolBar()
+
         self.master.iconbitmap(getResourcePath("jira.ico"))
         self.master.geometry("1250x500")
         self.columns = ()
@@ -43,6 +49,9 @@ class App:
         # Cleanup when window is closed
         self.master.protocol("WM_DELETE_WINDOW",self.exit)
 
+        self.setupCtkToolBar()
+
+        #
         # Buttons / tab control / labels
         self.refresh_button = ttk.Button(self.master, text="Refresh ⭮", command=self.refresh_button_handler)
         self.refresh_button.pack(pady=10, padx=10)
@@ -111,10 +120,14 @@ class App:
     def darkMode(self):
         sv_ttk.set_theme("dark")
         ck.set_appearance_mode("dark")
+        global themeState
+        themeState = ThemeState.DARK
 
     def lightMode(self):
         sv_ttk.set_theme("light")
         ck.set_appearance_mode("light")
+        global themeState
+        themeState = ThemeState.LIGHT
 
     # Credits
     def showCredits(self):
@@ -125,6 +138,14 @@ class App:
         helpWindow = tk.Toplevel(self.master)
         helpWindow.iconbitmap(getResourcePath("jira.ico"))
         helpWindow.title("Help")
+
+        global themeState
+        if themeState == ThemeState.DARK:
+            log("themeState",themeState)
+            changeHeaderColor(helpWindow,0x303030)
+        elif themeState == ThemeState.LIGHT:
+            log("themeState",themeState)
+            changeHeaderColor(helpWindow,0xFFFFFF)
 
         l1 = ttk.Label(helpWindow,text="Please refer to the following:")
         l1.pack(padx=10,pady=10)
@@ -357,6 +378,16 @@ def _dir(_object): #wrapper function to exclude internal objects
             _list.append(obj)
     return _list
 
+def changeHeaderColor(window,color):
+    try:
+        from ctypes import windll, byref, sizeof, c_int
+        # optional feature to change the header in windows 11
+        HWND = windll.user32.GetParent(window.winfo_id())
+        DWMWA_CAPTION_COLOR = 35
+        windll.dwmapi.DwmSetWindowAttribute(HWND, DWMWA_CAPTION_COLOR, byref(c_int(color)), sizeof(c_int))
+    except Exception as ex:
+        log("could not set header color:",ex)
+
 #gui configuration window
 class Config():
     class tkObjects:
@@ -369,6 +400,17 @@ class Config():
         self.window.iconbitmap(getResourcePath("jira.ico"))
         self.window.title("Config")
         self.window.grab_set()
+
+        self.window.protocol("WM_DELETE_WINDOW",self.window.destroy)
+
+
+        global themeState
+        if themeState == ThemeState.DARK:
+            log("themeState",themeState)
+            changeHeaderColor(self.window,0x303030)
+        elif themeState == ThemeState.LIGHT:
+            log("themeState",themeState)
+            changeHeaderColor(self.window,0xFFFFFF)
 
         helpText = self._loadHelpText()
         
