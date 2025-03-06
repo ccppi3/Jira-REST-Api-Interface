@@ -119,8 +119,9 @@ class App:
 
 
     def darkMode(self):
-        sv_ttk.set_theme("dark")
         customtkinter.set_appearance_mode("dark")
+        sv_ttk.set_theme("dark")
+
 
     def lightMode(self):
         sv_ttk.set_theme("light")
