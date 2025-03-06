@@ -26,6 +26,8 @@ from pymupdf.mupdf import UCDN_SCRIPT_OLD_UYGHUR
 import pdf
 from pop3 import err as err
 import copy
+from CTkMenuBar import CustomDropdownMenu as ctkDropDown
+import CTkMenuBar
 
 pythoncom.CoInitialize()
 
@@ -45,7 +47,7 @@ class App:
         self.master = master
         #self.master.resizable(False, False)
         self.master.title("JiraFlow")
-        self.setupToolBar()
+        self.setupCtkToolBar()
         self.master.iconbitmap(getResourcePath("jira.ico"))
         self.master.geometry("1250x500")
         self.columns = ()
@@ -91,6 +93,30 @@ class App:
         menubar.add_cascade(label="Appearance",menu=appearanceMenu)
 
         self.master.config(menu=menubar)
+    def setupCtkToolBar(self):
+        menubar = CTkMenuBar.CTkMenuBar(master=self.master)
+
+        mEdit = menubar.add_cascade("Edit")
+        mSettings = menubar.add_cascade("Settings")
+        mAbout = menubar.add_cascade("About")
+        mAppearance = menubar.add_cascade("Appearance")
+
+        settingsMenu = ctkDropDown(widget=mSettings)
+        settingsMenu.add_option(option="Config",command = lambda: Config(self.master))
+
+        helpMenu = ctkDropDown(widget=mAbout)
+        helpMenu.add_option(option="Credits",command = self.showCredits)
+        helpMenu.add_option(option="Help",command = self.showHelp)
+
+        editMenu = ctkDropDown(widget=mEdit)
+        editMenu.add_option(option="Forget last Mail",command = com.rmLastEntryIDDB)
+
+        appearanceMenu = ctkDropDown(widget=mAppearance)
+        appearanceMenu.add_option(option="Dark Mode", command=self.darkMode)
+        appearanceMenu.add_option(option="Light Mode", command=self.lightMode)
+
+
+
 
     def darkMode(self):
         sv_ttk.set_theme("dark")

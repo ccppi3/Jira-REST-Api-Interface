@@ -7,3 +7,4 @@ pyinstaller
 CTKtooltip
 customtkinter
 sv_ttk
+ctkmenubar
