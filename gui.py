@@ -200,6 +200,7 @@ class App:
     # Handle confirm delete button click
     def confirm_delete_button_handler(self, tab):
         self.make_sure_window.destroy()
+        self.refresh_button.config(state=tk.NORMAL)
         tab.destroy()
 
     # Handle refresh button click
@@ -381,14 +382,14 @@ def _dir(_object): #wrapper function to exclude internal objects
 def changeHeaderColor(window,color):
     try:
         from ctypes import windll, byref, sizeof, c_int
-        # optional feature to change the header in windows 11
+        # Optional feature to change the header in windows 11
         HWND = windll.user32.GetParent(window.winfo_id())
         DWMWA_CAPTION_COLOR = 35
         windll.dwmapi.DwmSetWindowAttribute(HWND, DWMWA_CAPTION_COLOR, byref(c_int(color)), sizeof(c_int))
     except Exception as ex:
         log("could not set header color:",ex)
 
-#gui configuration window
+# Gui configuration window
 class Config():
     class tkObjects:
         pass
@@ -414,8 +415,8 @@ class Config():
 
         helpText = self._loadHelpText()
         
-        #we create an object attribute for each config entry (metaprogramming)
-        #we add a toolbox for each textbox
+        # We create an object attribute for each config entry (metaprogramming)
+        # We add a toolbox for each textbox
         for i,entry in enumerate(listOfEntries):
             tmpObj = ck.CTkLabel(self.window,text=entry[0])
             tmpObj.grid(row=i,column=0)
@@ -432,7 +433,7 @@ class Config():
             tmpObj.id = i
             setattr(self.tkObjects,entry[0],tmpObj)
 
-        #we apply batch configs for all elements in page
+        # We apply batch configs for all elements in page
         self._tkConfigAll()
 
         for objName in _dir(self.tkObjects):
