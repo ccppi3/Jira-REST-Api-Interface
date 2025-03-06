@@ -21,13 +21,13 @@ from CTkMenuBar import CustomDropdownMenu as ctkDropDown
 import CTkMenuBar
 from dotenv import load_dotenv
 
-# Inizialize COM Interface
+# Inizialize COM-Interface
 pythoncom.CoInitialize()
 
 # App Class
 class App:
     def __init__(self, master):
-        # Set initial Color Theme
+        # Set initial color theme
         self.lightMode()
         # Initialize variables
         self.master = master
@@ -38,12 +38,12 @@ class App:
         self.columns = ()
         self.status = ""
         tabs = []
-        self.tables = [] #this contains list of table object with a list of entries
+        self.tables = [] # This contains list of table object with a list of entries
 
         # Cleanup when window is closed
         self.master.protocol("WM_DELETE_WINDOW",self.exit)
 
-        #
+        # Buttons / tab control / labels
         self.refresh_button = ttk.Button(self.master, text="Refresh ⭮", command=self.refresh_button_handler)
         self.refresh_button.pack(pady=10, padx=10)
 
@@ -53,16 +53,18 @@ class App:
         self.status_label = ttk.Label(self.master, text="Status: " + self.status)
         self.status_label.pack()
 
-    # Cleanup Threads
+    # Cleanup threads
     def exit(self):
-        #make sure to also close running threads
+        # Make sure to also close running threads
         os._exit(0)
 
+    # Setup basic toolbar
     def setupToolBar(self):
         menubar = tk.Menu(self.master)
         settingsMenu = tk.Menu(menubar, tearoff=0)
         settingsMenu.add_command(label="Config",command = lambda: Config(self.master))
 
+        # Create & add menu items
         helpMenu = tk.Menu(menubar, tearoff=0)
         helpMenu.add_command(label="Credits",command = self.showCredits)
         helpMenu.add_command(label="Help",command = self.showHelp)
@@ -81,9 +83,11 @@ class App:
 
         self.master.config(menu=menubar)
 
+    # Setup custom tk toolbar
     def setupCtkToolBar(self):
         menubar = CTkMenuBar.CTkTitleMenu(master=self.master)
 
+        # Create & add menu items
         mEdit = menubar.add_cascade("Edit")
         mSettings = menubar.add_cascade("Settings")
         mAbout = menubar.add_cascade("About")
@@ -103,9 +107,7 @@ class App:
         appearanceMenu.add_option(option="Dark Mode", command=self.darkMode)
         appearanceMenu.add_option(option="Light Mode", command=self.lightMode)
 
-
-
-
+    # Set theme & appearance
     def darkMode(self):
         sv_ttk.set_theme("dark")
         ck.set_appearance_mode("dark")
@@ -114,8 +116,11 @@ class App:
         sv_ttk.set_theme("light")
         ck.set_appearance_mode("light")
 
+    # Credits
     def showCredits(self):
         messagebox.showinfo("Credits","This software was developed by \nJoel Bonini \nand\nJonathan Wyss \nin santis for internal usage")
+
+    # Help window
     def showHelp(self):
         helpWindow = tk.Toplevel(self.master)
         helpWindow.iconbitmap(getResourcePath("jira.ico"))
@@ -133,9 +138,11 @@ class App:
         l3.bind("<Button-1>",lambda e:self.hyperlinkCallback(l3.cget("text")))
         l4.bind("<Button-1>",lambda e:self.hyperlinkCallback(l4.cget("text")))
 
+    # Make links work
     def hyperlinkCallback(self,url):
         webbrowser.open_new_tab(url)
 
+    # Initialize all tabs recursively
     def init_tabs(self,tables):
         self.tabs = []
         self.tables = []
@@ -149,7 +156,7 @@ class App:
                 self.tabs.append(tabRef)
 
         for i,tab in enumerate(self.tabs):
-            #check if table is empty if not create a table inside the tab
+            # Check if table is empty if not create a table inside the tab
             if len(tables[i].data) > 0 and len(vars(tables[i].data[0]))>0:
                 self.tabControl.add(tab, text=str(tables[i].name).capitalize() + " \n " + str(tables[i].pdfNameDate))
                 confirm_wrapper = partial(self.make_sure,tab, "create")
@@ -162,13 +169,14 @@ class App:
                 tab.delete_button.grid(row=3, column=1, columnspan=2, pady=5, padx=5, sticky="E")
                 self.create_table(tab,tables[i])
 
-    # Handle confirm button click
+    # Handle confirm create button click
     def confirm_create_button_handler(self,tab):
         # Close confirm window
         self.make_sure_window.destroy()
         self.loadingThread = threading.Thread(target=self.loading,args=(self.post_thread,tab))
         self.loadingThread.start()
 
+    # Handle confirm delete button click
     def confirm_delete_button_handler(self, tab):
         self.make_sure_window.destroy()
         tab.destroy()
@@ -228,7 +236,6 @@ class App:
         self.refresh_button.config(state=tk.DISABLED)
         # Display a loading bar
         self.status_bar = ttk.Progressbar(self.master, mode="indeterminate")
-        #self.status_bar.grid(row=1, column=0, padx=5, pady=5, sticky="nsew")
         self.status_bar.pack()
         self.status_bar.start()
 
