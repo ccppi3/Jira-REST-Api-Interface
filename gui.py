@@ -82,7 +82,7 @@ class App:
         self.master.config(menu=menubar)
 
     def setupCtkToolBar(self):
-        menubar = CTkMenuBar.CTkMenuBar(master=self.master)
+        menubar = CTkMenuBar.CTkTitleMenu(master=self.master)
 
         mEdit = menubar.add_cascade("Edit")
         mSettings = menubar.add_cascade("Settings")
