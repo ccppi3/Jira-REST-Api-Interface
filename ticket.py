@@ -135,7 +135,7 @@ class Ticket:
         else:
             portalkey = "lzbict"
         payload["fields"]["description"]["content"].append(self.table)
-        payload["fields"]["summary"] = self.summary
+        payload["fields"]["summary"] = self.company.capitalize() + " " + self.summary.capitalize()
         payload["fields"]["labels"] = self.label if self.label else []
 
         if self.ticketType != "arbeitsplatzwechsel":
