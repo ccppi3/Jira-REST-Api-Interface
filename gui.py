@@ -22,8 +22,6 @@ from CTkMenuBar import CustomDropdownMenu as ctkDropDown
 import CTkMenuBar
 from dotenv import load_dotenv
 
-# Inizialize COM Interface
-pythoncom.CoInitialize()
 
 class ThemeState(Enum):
     LIGHT = 1
@@ -133,6 +131,14 @@ class App:
         helpWindow = tk.Toplevel(self.master)
         helpWindow.iconbitmap(getResourcePath("jira.ico"))
         helpWindow.title("Help")
+
+        global themeState
+        if themeState == ThemeState.DARK:
+            log("themeState",themeState)
+            changeHeaderColor(helpWindow,0x303030)
+        elif themeState == ThemeState.LIGHT:
+            log("themeState",themeState)
+            changeHeaderColor(helpWindow,0xFFFFFF)
 
         l1 = ttk.Label(helpWindow,text="Please refer to the following:")
         l1.pack(padx=10,pady=10)
