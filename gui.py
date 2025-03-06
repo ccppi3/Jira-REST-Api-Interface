@@ -1,51 +1,36 @@
 # Gui to check incoming data before creating ticket on Jira
-# Author(s): Joel Bonini
-# Last edited: Joel Bonini 10.02.2025
-import time
+# Author(s): Joel Bonini, Jonathan Wyss
+# Last edited: Joel Bonini 06.03.2025
+
+# ----- Imports -----
 import tkinter as tk
-from tkinter import ttk
-from tkinter import messagebox
-import customtkinter
+from tkinter import ttk, messagebox
 import customtkinter as ck
 import CTkToolTip as tt
-import threading
 from functools import partial
-import queue
+import threading, queue
 import main
 import inspect
 from pop3 import log,err
-import pop3
-import pythoncom
-import com
-import os
-import sys
+import pythoncom, com
+import os, sys
 import configparser
 import webbrowser
 import sv_ttk
-from pymupdf.mupdf import UCDN_SCRIPT_OLD_UYGHUR
-import pdf
-from pop3 import err as err
-import copy
 from CTkMenuBar import CustomDropdownMenu as ctkDropDown
 import CTkMenuBar
+from dotenv import load_dotenv
 
+# Inizialize COM Interface
 pythoncom.CoInitialize()
 
-class TableData:
-    def __init__(self,name,data,fileName,pageNumber,creationDate):
-        self.name = name
-        self.data = data
-        self.fileName = fileName
-        self.pageNumber = pageNumber
-        self.creationDate = creationDate
-
+# App Class
 class App:
     def __init__(self, master):
         # Set initial Color Theme
         self.lightMode()
         # Initialize variables
         self.master = master
-        #self.master.resizable(False, False)
         self.master.title("JiraFlow")
         self.setupCtkToolBar()
         self.master.iconbitmap(getResourcePath("jira.ico"))
@@ -54,11 +39,11 @@ class App:
         self.status = ""
         tabs = []
         self.tables = [] #this contains list of table object with a list of entries
-        # Create table widget with data
-        #self.create_table()
 
+        # Cleanup when window is closed
         self.master.protocol("WM_DELETE_WINDOW",self.exit)
 
+        #
         self.refresh_button = ttk.Button(self.master, text="Refresh ⭮", command=self.refresh_button_handler)
         self.refresh_button.pack(pady=10, padx=10)
 
@@ -67,6 +52,8 @@ class App:
 
         self.status_label = ttk.Label(self.master, text="Status: " + self.status)
         self.status_label.pack()
+
+    # Cleanup Threads
     def exit(self):
         #make sure to also close running threads
         os._exit(0)
@@ -93,6 +80,7 @@ class App:
         menubar.add_cascade(label="Appearance",menu=appearanceMenu)
 
         self.master.config(menu=menubar)
+
     def setupCtkToolBar(self):
         menubar = CTkMenuBar.CTkMenuBar(master=self.master)
 
@@ -120,11 +108,11 @@ class App:
 
     def darkMode(self):
         sv_ttk.set_theme("dark")
-        customtkinter.set_appearance_mode("dark")
+        ck.set_appearance_mode("dark")
 
     def lightMode(self):
         sv_ttk.set_theme("light")
-        customtkinter.set_appearance_mode("light")
+        ck.set_appearance_mode("light")
 
     def showCredits(self):
         messagebox.showinfo("Credits","This software was developed by \nJoel Bonini \nand\nJonathan Wyss \nin santis for internal usage")
