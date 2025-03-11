@@ -2,7 +2,7 @@
 # Author(s): Joel Bonini, Jonathan Wyss
 # Last edited: Joel Bonini 06.03.2025
 
-# ----- Imports -----
+# --- Imports ---
 import tkinter as tk
 from tkinter import ttk, messagebox
 import customtkinter as ck
@@ -22,14 +22,20 @@ from CTkMenuBar import CustomDropdownMenu as ctkDropDown
 import CTkMenuBar
 from dotenv import load_dotenv
 
+
+
 # Inizialize COM-Interface
 pythoncom.CoInitialize()
 
+# Color theme state
 class ThemeState(Enum):
     LIGHT = 1
     DARK = 2
 
 themeState = ThemeState.LIGHT
+
+
+
 # App Class
 class App:
     def __init__(self, master):
@@ -53,14 +59,14 @@ class App:
 
         #
         # Buttons / tab control / labels
-        self.refresh_button = ttk.Button(self.master, text="Refresh ⭮", command=self.refresh_button_handler)
-        self.refresh_button.pack(pady=10, padx=10)
+        self.refreshButton = ttk.Button(self.master, text="Refresh ⭮", command=self.refreshButtonHandler)
+        self.refreshButton.pack(pady=10, padx=10)
 
         self.tabControl = ttk.Notebook(self.master)
         self.tabControl.pack(expand=1, fill="both")
 
-        self.status_label = ttk.Label(self.master, text="Status: " + self.status)
-        self.status_label.pack()
+        self.statusLabel = ttk.Label(self.master, text="Status: " + self.status)
+        self.statusLabel.pack()
 
     # Cleanup threads
     def exit(self):
@@ -164,7 +170,7 @@ class App:
         webbrowser.open_new_tab(url)
 
     # Initialize all tabs recursively
-    def init_tabs(self,tables):
+    def initTabs(self,tables):
         self.tabs = []
         self.tables = []
         for i,table in enumerate(tables):
@@ -180,70 +186,70 @@ class App:
             # Check if table is empty if not create a table inside the tab
             if len(tables[i].data) > 0 and len(vars(tables[i].data[0]))>0:
                 self.tabControl.add(tab, text=str(tables[i].name).capitalize() + " \n " + str(tables[i].pdfNameDate))
-                confirm_wrapper = partial(self.make_sure,tab, "create")
-                delete_wrapper = partial(self.make_sure, tab, "delete")
+                confirmWrapper = partial(self.makeSure,tab, "create")
+                deleteWrapper = partial(self.makeSure, tab, "delete")
 
                 # Buttons
-                tab.confirm_button = ttk.Button(tab, text="Create Ticket", width=15, command=confirm_wrapper)
-                tab.confirm_button.grid(row=3, column=0, columnspan=2, pady=5, padx=5, sticky="W")
-                tab.delete_button = ttk.Button(tab, text="Delete Ticket", width=15, command=delete_wrapper)
-                tab.delete_button.grid(row=3, column=1, columnspan=2, pady=5, padx=5, sticky="E")
-                self.create_table(tab,tables[i])
+                tab.confirmButton = ttk.Button(tab, text="Create Ticket", width=15, command=confirmWrapper)
+                tab.confirmButton.grid(row=3, column=0, columnspan=2, pady=5, padx=5, sticky="W")
+                tab.deleteButton = ttk.Button(tab, text="Delete Ticket", width=15, command=deleteWrapper)
+                tab.deleteButton.grid(row=3, column=1, columnspan=2, pady=5, padx=5, sticky="E")
+                self.createTable(tab,tables[i])
 
     # Handle confirm create button click
-    def confirm_create_button_handler(self,tab):
+    def confirmCreateButtonHandler(self,tab):
         # Close confirm window
-        self.make_sure_window.destroy()
-        self.loadingThread = threading.Thread(target=self.loading,args=(self.post_thread,tab))
+        self.makeSureWindow.destroy()
+        self.loadingThread = threading.Thread(target=self.loading,args=(self.postThread,tab))
         self.loadingThread.start()
 
     # Handle confirm delete button click
-    def confirm_delete_button_handler(self, tab):
-        self.make_sure_window.destroy()
-        self.refresh_button.config(state=tk.NORMAL)
+    def confirmDeleteButtonHandler(self, tab):
+        self.makeSureWindow.destroy()
+        self.refreshButton.config(state=tk.NORMAL)
         tab.destroy()
 
     # Handle refresh button click
-    def refresh_button_handler(self):
+    def refreshButtonHandler(self):
         outlook = com.init()
         pythoncom.CoInitialize()
         
-        self.loadingThread = threading.Thread(target=self.loading,args=(self.fetch_thread,outlook))
+        self.loadingThread = threading.Thread(target=self.loading,args=(self.fetchThread,outlook))
         self.loadingThread.start()
 
-    def post_thread(self,callback_queue,tab):
+    def postThread(self,callbackQueue,tab):
         for status in main.tableToTicket(tab.table):
             if type(status) == str:
-                self.status_label.config(text = "Status: " + str(status))
+                self.statusLabel.config(text ="Status: " + str(status))
                 if status == "canceled":
                     log("User aborted sending",level=err.INFO)
-                    callback_queue.put("Post Thread finished")
-            else: #when returns type is intiger we have finised
+                    callbackQueue.put("Post Thread finished")
+            else: # When return type is integer we have finised
                 if type(status) == int:
                     if status == 401:
                         messagebox.showerror("Error",str(status) + "\nAccess to Jira was denied, is your jira token valid?")
                     elif status >= 300:
                         messagebox.showerror("Error",str(status) + "\nHttpError")
 
-                callback_queue.put("destroy")
+                callbackQueue.put("destroy")
 
-    def fetch_thread(self,callback_queue,outlook):
+    def fetchThread(self,callbackQueue,outlook):
         pythoncom.CoInitialize()
         for ret in main.run(outlook):
             if type(ret) == list:
                 self.tables = ret
             else:
                 if "ERROR" in ret:
-                    log("fetch_thread:",ret,level=err.ERROR)
-                    self.status_label.config(text = ret)
+                    log("fetchThread:",ret,level=err.ERROR)
+                    self.statusLabel.config(text = ret)
                     if "MAPI" in ret:
                         messagebox.showerror("Error",ret + "\nMaybe outlook is not started?\nPlease make sure Outlook is running at least in the background")
                     else:
                         messagebox.showerror("ERROR",ret)
                 else:
-                    self.status_label.config(text = "Status: " + str(ret))
+                    self.statusLabel.config(text ="Status: " + str(ret))
                     print("[main]",ret)
-        callback_queue.put("fetch Thread finished")
+        callbackQueue.put("fetch Thread finished")
 
     # Loading function to diable buttons and display progressbar
     def loading(self,threadFunction,tab):
@@ -251,80 +257,80 @@ class App:
         # Disable buttons
         if tab:
             try:
-                tab.confirm_button.config(state=tk.DISABLED)
+                tab.confirmButton.config(state=tk.DISABLED)
             except:
                 pass
 
-        self.refresh_button.config(state=tk.DISABLED)
+        self.refreshButton.config(state=tk.DISABLED)
         # Display a loading bar
-        self.status_bar = ttk.Progressbar(self.master, mode="indeterminate")
-        self.status_bar.pack()
-        self.status_bar.start()
+        self.statusBar = ttk.Progressbar(self.master, mode="indeterminate")
+        self.statusBar.pack()
+        self.statusBar.start()
 
-        callback_queue = queue.Queue()
+        callbackQueue = queue.Queue()
          
-        self.childThread = threading.Thread(target=threadFunction,args=(callback_queue,tab))
+        self.childThread = threading.Thread(target=threadFunction,args=(callbackQueue,tab))
         self.childThread.start()
         self.childThread.join() #wait for the child thread
-        msg = callback_queue.get() 
+        msg = callbackQueue.get()
         print("callbackmsg:",msg)
 
-        self.init_tabs(self.tables)
+        self.initTabs(self.tables)
         # Reavtivate buttons
         try:
-            tab.confirm_button.config(state=tk.NORMAL)
-            tab.delete_button.confi(state=tk.NORMAL)
+            tab.confirmButton.config(state=tk.NORMAL)
+            tab.deleteButton.confi(state=tk.NORMAL)
         except:
             log("noTabs")
         if msg == "destroy":
             tab.destroy()
 
-        self.refresh_button.config(state=tk.NORMAL)
+        self.refreshButton.config(state=tk.NORMAL)
         # Remove loading bar
-        self.status_bar.stop()
-        self.status_bar.destroy()
+        self.statusBar.stop()
+        self.statusBar.destroy()
 
     # Confirm Winow
-    def make_sure(self,tab,type):
-        self.refresh_button.config(state=tk.DISABLED)
+    def makeSure(self,tab,type):
+        self.refreshButton.config(state=tk.DISABLED)
         if tab:
-            tab.confirm_button.config(state=tk.DISABLED)
-            tab.delete_button.config(state=tk.DISABLED)
+            tab.confirmButton.config(state=tk.DISABLED)
+            tab.deleteButton.config(state=tk.DISABLED)
         # Create window
-        self.make_sure_window = tk.Toplevel(self.master)
-        self.make_sure_window.title("Are you sure? ")
-        self.make_sure_window.iconbitmap(getResourcePath("jira.ico"))
-        self.make_sure_window.resizable(False, False)
-        self.make_sure_window.geometry("280x75")
+        self.makeSureWindow = tk.Toplevel(self.master)
+        self.makeSureWindow.title("Are you sure? ")
+        self.makeSureWindow.iconbitmap(getResourcePath("jira.ico"))
+        self.makeSureWindow.resizable(False, False)
+        self.makeSureWindow.geometry("280x75")
 
 
         # Display prompt
-        self.make_sure_label = ttk.Label(self.make_sure_window, text=f"Are you sure you want to {type} this Ticket?")
-        self.make_sure_label.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
+        self.makeSureLabel = ttk.Label(self.makeSureWindow, text=f"Are you sure you want to {type} this Ticket?")
+        self.makeSureLabel.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
 
         # Confirm button
         if type == "create":
-            confirm_wrapper = partial(self.confirm_create_button_handler,tab)
+            confirmWrapper = partial(self.confirmCreateButtonHandler,tab)
         else:
-            confirm_wrapper = partial(self.confirm_delete_button_handler, tab)
-        yes_button = ttk.Button(self.make_sure_window, text="Yes", command=confirm_wrapper)
-        yes_button.grid(row=1, column=0, columnspan=1, padx=5, pady=5, sticky="nsew")
+            confirmWrapper = partial(self.confirmDeleteButtonHandler, tab)
+        yesButton = ttk.Button(self.makeSureWindow, text="Yes", command=confirmWrapper)
+        yesButton.grid(row=1, column=0, columnspan=1, padx=5, pady=5, sticky="nsew")
 
         # Cancel button
-        cancel_wrapper = partial(self.cancel,tab)
-        self.make_sure_window.protocol("WM_DELETE_WINDOW",cancel_wrapper)
-        cancel_button = ttk.Button(self.make_sure_window, text="Cancel", command=cancel_wrapper)
-        cancel_button.grid(row=1, column=1, columnspan=1, padx=5, pady=5, sticky="nsew")
+        cancelWrapper = partial(self.cancel,tab)
+        self.makeSureWindow.protocol("WM_DELETE_WINDOW", cancelWrapper)
+        cancelButton = ttk.Button(self.makeSureWindow, text="Cancel", command=cancelWrapper)
+        cancelButton.grid(row=1, column=1, columnspan=1, padx=5, pady=5, sticky="nsew")
 
     # Close window on cancel
     def cancel(self,tab):
-        tab.confirm_button.config(state=tk.NORMAL)
-        tab.delete_button.config(state=tk.NORMAL)
-        self.refresh_button.config(state=tk.NORMAL)
-        self.make_sure_window.destroy()
+        tab.confirmButton.config(state=tk.NORMAL)
+        tab.deleteButton.config(state=tk.NORMAL)
+        self.refreshButton.config(state=tk.NORMAL)
+        self.makeSureWindow.destroy()
 
     # Function to create the table
-    def create_table(self,tab,tables):
+    def createTable(self,tab,tables):
         objList = tables.data
         listOfList = []
         columns = []
@@ -344,18 +350,18 @@ class App:
             listOfList.append(templist)
 
         # Create table
-        tables.employee_table = ttk.Treeview(tab, columns=columns, show="headings", height=5)
+        tables.employeeTable = ttk.Treeview(tab, columns=columns, show="headings", height=5)
         for item in columns:
-            tables.employee_table.heading(item, text=item)
-            tables.employee_table.column(item, anchor=tk.CENTER)
+            tables.employeeTable.heading(item, text=item)
+            tables.employeeTable.column(item, anchor=tk.CENTER)
         for lists in listOfList:
-            tables.employee_table.insert("", tk.END, values=lists)
+            tables.employeeTable.insert("", tk.END, values=lists)
 
         # Make scrollbar
-        scrollbar = ttk.Scrollbar(tab, orient="vertical", command=tables.employee_table.yview)
-        tables.employee_table.configure(yscroll=scrollbar.set)
+        scrollbar = ttk.Scrollbar(tab, orient="vertical", command=tables.employeeTable.yview)
+        tables.employeeTable.configure(yscroll=scrollbar.set)
         # Place scrollbar and table
-        tables.employee_table.grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
+        tables.employeeTable.grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
         scrollbar.grid(row=2, column=2, sticky="nsew", pady=5)
         # Configure rows and columns to expand them onto whole screen
         tab.grid_rowconfigure(2, weight=1)  # Expand row 2
