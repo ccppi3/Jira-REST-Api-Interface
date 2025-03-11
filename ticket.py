@@ -1,7 +1,9 @@
 # Application to create Jira-Tickets automaticaly from received E-mails about new employees
 # Using: Jira REST-API
 # Author(s): Joel Bonini, Jonathan Wyss
-# Last Updated: Jonathan Wyss 07/02/25
+# Last Updated: Joel Bonini 11.03.25
+
+# --- Imports ---
 import requests, json, os
 from requests.auth import HTTPBasicAuth
 from dotenv import load_dotenv
@@ -11,14 +13,15 @@ from pop3 import log,err
 from gui import getResourcePath
 
 
-# load .env file
 
+# Load .env file
 APPLOCAL = os.path.join(os.path.expanduser("~"),"AppData","Local")
 APPNAME = "Jira-Flow"
 APPDIR = os.path.join(APPLOCAL,APPNAME)
 APPDIR = APPDIR + "\\"
 load_dotenv(APPDIR + "config")
 
+# Gen Rows for table in ticket
 def generateRow(_list):
     header = {
             "type": "tableRow",
@@ -41,13 +44,12 @@ def generateRow(_list):
         }
         header["content"].append(content)
     return header
-        
 
-        
-    
 
+
+# Ticket Class
 class Ticket:
-    def __init__(self,table, data, file_name, company, ticketType):
+    def __init__(self,table, data, fileName, company, ticketType):
         # Api info
         self.tableObj = table
         self.url = os.getenv('IssueUrl')
@@ -62,10 +64,10 @@ class Ticket:
         # Variable declarations
         self.ticketType = ticketType.lower()
         self.data = data
-        self.file_name = file_name
+        self.fileName = fileName
         self.description = ""
         self.label = [ticketType]
-        self.summary = ticketType + " " + file_name[29:-4]
+        self.summary = ticketType + " " + fileName[29:-4]
         self.id = ""
         self.table = ""
         self.company = company
@@ -126,45 +128,43 @@ class Ticket:
     # Create the Payload from a Template and input data
     def createPayload(self):
         with open(getResourcePath("TemplatePayload.json"), "r") as file:
-            template_data = json.load(file)
-        payload = template_data
-        print("type template:",type(template_data),"before edit:",json.dumps(template_data))
+            templateData = json.load(file)
+        payload = templateData
+        print("type template:",type(templateData),"before edit:",json.dumps(templateData))
         if self.company.lower() == "allpower":
-            portalkey = "lzbapw" # Portalkey is needed for customfield
+            portalKey = "lzbapw" # Portalkey is needed for customfield
             payload["fields"]["project"]["key"] = "LZBAPW"
         else:
-            portalkey = "lzbict"
+            portalKey = "lzbict"
         payload["fields"]["description"]["content"].append(self.table)
         payload["fields"]["summary"] = self.company.capitalize() + " " + self.summary.capitalize()
         payload["fields"]["labels"] = self.label if self.label else []
 
         if self.ticketType != "arbeitsplatzwechsel":
-            payload["fields"][self.requestCustomField] = portalkey + "/" + self.onboardKey  #portalkey / requesttype key
+            payload["fields"][self.requestCustomField] = portalKey + "/" + self.onboardKey  #portalkey / requesttype key
         else:
-            payload["fields"][self.requestCustomField] = portalkey + "/" + self.changeKey
-        
-        #try:
+            payload["fields"][self.requestCustomField] = portalKey + "/" + self.changeKey
+
         payload2 = json.dumps(payload)
         print("payload2 dump:",payload2)
-        #except :
-        #log("error payload type:",type(payload),"\n content:",payload,level=err.ERROR)
         print("payload:",payload)
         return payload2
 
     # Send payload to Jira Api --> Ticket creation
     def createTicket(self,check = True):
         if self.formatData() == 1:
-            print("create_ticket abort")
+            print("createTicket abort")
             yield 1
         payload = self.createPayload()
-        # Create ticket
+        # Debug summary
         print("SUMMARY: ", self.summary)
-
+        # Alternate Check for devs to not spam Jira
         if check == True:
             yes = input("really create ticket? insert (yes):")
         else:
             yes = ""
         if yes == "yes" or check == False:
+            # Create Ticket
             yield "Posting request"
             response = requests.post(self.url, data=payload, headers=self.headers, auth=self.auth)
             print(response.status_code)
@@ -198,7 +198,7 @@ class Ticket:
                 headers=headers,
                 auth=self.auth,
                 files = {
-                    "file": (self.file_name, open(self.tableObj.fileName,"rb"), "application-type")
+                    "file": (self.fileName, open(self.tableObj.fileName, "rb"), "application-type")
                     }
                 )
         print("Response 1: ", response)
