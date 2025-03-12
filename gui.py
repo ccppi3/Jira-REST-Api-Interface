@@ -172,7 +172,7 @@ class App:
     # Initialize all tabs recursively
     def initTabs(self,tables):
         self.tabs = []
-        self.tables = []
+
         for i,table in enumerate(tables):
             print("type table.data:",type(table.data))
             print("len vars:",len(vars(tables[i].data[0])))
@@ -183,18 +183,20 @@ class App:
                 self.tabs.append(tabRef)
 
         for i,tab in enumerate(self.tabs):
+            print("i:",i)
             # Check if table is empty if not create a table inside the tab
-            if len(tables[i].data) > 0 and len(vars(tables[i].data[0]))>0:
-                self.tabControl.add(tab, text=str(tables[i].name).capitalize() + " \n " + str(tables[i].pdfNameDate))
-                confirmWrapper = partial(self.makeSure,tab, "create")
-                deleteWrapper = partial(self.makeSure, tab, "delete")
+            #if len(tables[i].data) > 0 and len(vars(tables[i].data[0]))>0:
+            tab.table.dump()
+            self.tabControl.add(tab, text=str(tab.table.name).capitalize() + " \n " + str(tab.table.pdfNameDate))
+            confirmWrapper = partial(self.makeSure,tab, "create")
+            deleteWrapper = partial(self.makeSure, tab, "delete")
 
-                # Buttons
-                tab.confirmButton = ttk.Button(tab, text="Create Ticket", width=15, command=confirmWrapper)
-                tab.confirmButton.grid(row=3, column=0, columnspan=2, pady=5, padx=5, sticky="W")
-                tab.deleteButton = ttk.Button(tab, text="Delete Ticket", width=15, command=deleteWrapper)
-                tab.deleteButton.grid(row=3, column=1, columnspan=2, pady=5, padx=5, sticky="E")
-                self.createTable(tab,tables[i])
+            # Buttons
+            tab.confirmButton = ttk.Button(tab, text="Create Ticket", width=15, command=confirmWrapper)
+            tab.confirmButton.grid(row=3, column=0, columnspan=2, pady=5, padx=5, sticky="W")
+            tab.deleteButton = ttk.Button(tab, text="Delete Ticket", width=15, command=deleteWrapper)
+            tab.deleteButton.grid(row=3, column=1, columnspan=2, pady=5, padx=5, sticky="E")
+            self.createTable(tab,tab.table)
 
     # Handle confirm create button click
     def confirmCreateButtonHandler(self,tab):

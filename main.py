@@ -18,6 +18,13 @@ def removeIndexesFromList(indexListRemove,_list):
         except:
             log("indexListRemove:",indexListRemove,"\nlist:",_list," len:",len(_list),"\ni:",i)
 
+def _dir(_object): #wrapper function to exclude internal objects
+    _list=[]
+    for obj in dir(_object):
+        if not obj.startswith("__"):
+            _list.append(obj)
+    return _list
+
 class TableData:
     def __init__(self,name,data,fileName,pageNumber,creationDate,company):
         self.name = name
@@ -36,6 +43,12 @@ class TableData:
             dotList = dotList[0:len(dotList)-1]
             evDate = '.'.join(dotList)
         return evDate
+
+    def dump(self):
+        string = ""
+        for entry in self.data:
+            for ob in _dir(entry):
+                print(ob,"/",getattr(entry,ob))
 
 
 #load data from .env
