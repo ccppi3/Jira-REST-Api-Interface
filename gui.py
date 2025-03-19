@@ -23,7 +23,6 @@ import CTkMenuBar
 from dotenv import load_dotenv
 
 
-
 # Inizialize COM-Interface
 pythoncom.CoInitialize()
 
@@ -197,7 +196,6 @@ class App:
             tab.deleteButton = ttk.Button(tab, text="Delete Ticket", width=15, command=deleteWrapper)
             tab.deleteButton.grid(row=3, column=1, columnspan=2, pady=5, padx=5, sticky="E")
             self.createTable(tab,tab.table)
-
     # Handle confirm create button click
     def confirmCreateButtonHandler(self,tab):
         # Close confirm window
@@ -342,6 +340,29 @@ class App:
                 columns.append(item[0])
                 print("member to append:",item)
 
+#position Name and vorname at the First position
+        for item in columns:
+            log("item to check",item)
+            if "name" in str(item).lower() and "vor" not in str(item).lower():
+
+                try:#we try to swap with first position
+                    i = columns.index(item)
+                    temp=columns[0]
+                    columns[0]=item
+                    columns[i]=temp
+                    log("i",i,"column:",columns[i])
+                except:
+                    log("could not swap")
+            elif "vor" in str(item).lower():
+                try:#we try to swap with second position
+                    i = columns.index(item)
+                    temp=columns[1]
+                    columns[1]=item
+                    columns[i]=temp
+                except:
+                    log("could not swap")
+        log("columns:",columns)
+        
         for employee in objList:
             templist = []
             for item in columns:
