@@ -21,6 +21,7 @@ import sv_ttk
 from CTkMenuBar import CustomDropdownMenu as ctkDropDown
 import CTkMenuBar
 from dotenv import load_dotenv
+import deploy
 
 
 # Inizialize COM-Interface
@@ -112,6 +113,7 @@ class App:
 
         helpMenu = ctkDropDown(widget=mAbout)
         helpMenu.add_option(option="Credits",command = self.showCredits)
+        helpMenu.add_option(option="Version",command = self.showVersion)
         helpMenu.add_option(option="Help",command = self.showHelp)
 
         editMenu = ctkDropDown(widget=mEdit)
@@ -134,6 +136,9 @@ class App:
         global themeState
         themeState = ThemeState.LIGHT
 
+    def showVersion(self):
+        messagebox.showinfo("Version",deploy.getFileVersionExe())
+        
     # Credits
     def showCredits(self):
         messagebox.showinfo("Credits","This software was developed by \nJoel Bonini \nand\nJonathan Wyss \nin santis for internal usage")

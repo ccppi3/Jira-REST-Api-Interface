@@ -2,9 +2,9 @@ import sys,os
 import subprocess
 import win32api
 
-def amIBuilding():
+def amIExe():
     try:
-        basePath = sys._MEIPASS # are we building?
+        basePath = sys._MEIPASS # are we a built with pyinstaller or in an dev env?
         return True
     except:
         return False
@@ -52,7 +52,8 @@ def getResourcePath(relPath):
         basePath = os.path.abspath(".")
     return os.path.join(basePath,relPath)
 
-def getFileVersionExe(path=getResourcePath("jira-flow.exe")):
+def getFileVersionExe(path=getResourcePath("")):
+    path = path + "..\\jira-flow.exe"
     print("path to exe:",path)
     try:
         info = win32api.GetFileVersionInfo(path,'\\')
@@ -64,7 +65,7 @@ def getFileVersionExe(path=getResourcePath("jira-flow.exe")):
         version = ".".join([str(win32api.HIWORD(ms)),str(win32api.LOWORD(ms)),str(win32api.HIWORD(ls))])
         return version
 
-if amIBuilding():
+if not amIExe():
     version = getVersionGit()
     writeVersionFile(version)
 
