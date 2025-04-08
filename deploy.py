@@ -53,17 +53,61 @@ def getResourcePath(relPath):
     return os.path.join(basePath,relPath)
 
 def getFileVersionExe(path=getResourcePath("")):
-    path = path + "..\\jira-flow.exe"
+    if amIExe():
+        path = path + "..\\jira-flow.exe"
+    else: # we run in a dev env
+        path = "C:\\Program Files\\Jira-Flow\\jira-flow.exe"
     print("path to exe:",path)
     try:
         info = win32api.GetFileVersionInfo(path,'\\')
     except Exception as e:
         print("we dont seem to run as an exe, aborting version check\n",e)
     else:
-        ls = info['ProductVersionLS']
-        ms = info['ProductVersionMS']
-        version = ".".join([str(win32api.HIWORD(ms)),str(win32api.LOWORD(ms)),str(win32api.HIWORD(ls))])
-        return version
+        Pls = info['ProductVersionLS']
+        Pms = info['ProductVersionMS']
+        Fls = info['FileVersionLS']
+        Fms = info['FileVersionMS']
+
+        Pversion = ".".join([str(win32api.HIWORD(Pms)),str(win32api.LOWORD(Pms)),str(win32api.HIWORD(Pls)),str(win32api.LOWORD(Pls))])
+        Fversion = ".".join([str(win32api.HIWORD(Fms)),str(win32api.LOWORD(Fms)),str(win32api.HIWORD(Fls)),str(win32api.LOWORD(Fls))])
+        #P2version = info['ProductVersion']
+        print("ProductversionMSLS",Pversion)
+        print("Fileversion",Fversion)
+
+        return Fversion
+
+def getVersionsExe(path=getResourcePath(""),info_str="ProductVersion"):
+    ver_strings = (
+        "Comments",
+        "InternalName",
+        "ProductName",
+        "CompanyName",
+        "LegalCopyright",
+        "ProductVersion",
+        "FileDescription",
+        "LegalTrademarks",
+        "PrivateBuild",
+        "FileVersion",
+        "OriginalFilename",
+        "SpecialBuild",
+    )
+    if amIExe():
+        path = path + "..\\jira-flow.exe"
+    else: # we run in a dev env
+        path = "C:\\Program Files\\Jira-Flow\\jira-flow.exe"
+    print("path to exe:",path)
+
+    try:
+        info = win32api.GetFileVersionInfo(path,'\\VarFileInfo\\Translation')
+    except Exception as e:
+        print("we dont seem to run as an exe, aborting version check\n",e)
+    else:
+        for lang,codepage in info:
+            for ver_string in ver_strings:
+                str_info = f"\\StringFileInfo\\{lang:04X}{codepage:04X}\\{ver_string}"
+                print(ver_string, repr(win32api.GetFileVersionInfo(path, str_info)))
+                if ver_string == info_str:
+                    return repr(win32api.GetFileVersionInfo(path,str_info))
 
 if not amIExe():
     version = getVersionGit()

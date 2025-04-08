@@ -137,7 +137,11 @@ class App:
         themeState = ThemeState.LIGHT
 
     def showVersion(self):
-        messagebox.showinfo("Version",deploy.getFileVersionExe())
+        messagebox.showinfo("Version","Build: Version " + deploy.getVersionsExe() + "\n"  \
+                + "Product Name: " + deploy.getVersionsExe(info_str = "ProductName") + "\n" \
+                + "FileVersion: " + deploy.getVersionsExe(info_str = "FileVersion") \
+                )
+
         
     # Credits
     def showCredits(self):
