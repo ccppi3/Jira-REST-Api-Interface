@@ -22,6 +22,8 @@ from CTkMenuBar import CustomDropdownMenu as ctkDropDown
 import CTkMenuBar
 from dotenv import load_dotenv
 import deploy
+import utils.fileio as fileio
+import tkinterdnd2
 
 
 # Inizialize COM-Interface
@@ -67,6 +69,37 @@ class App:
 
         self.statusLabel = ttk.Label(self.master, text="Status: " + self.status)
         self.statusLabel.pack()
+
+        self.master.drop_target_register(tkinterdnd2.DND_FILES)
+        self.master.dnd_bind("<<Drop>>",self.showPdfListBox )
+
+    def showPdfListBox(self,e):
+        def run(filelist):
+            for ret in main._runPdfParser(filelist):
+                if type(ret) == list:
+                    tableDataList = ret
+                else:
+                    yield ret
+
+        print("showPdfListBox")
+        pdfListWindow = tk.Toplevel(self.master)
+        pdfListWindow.iconbitmap(getResourcePath("jira.ico"))
+        pdfListWindow.title("Pdfs to Process")
+
+        listbox = ttk.Treeview(pdfListWindow,show="tree")
+        listbox.bind("<<TreeviewSelect>>",lambda e: self.logSelFile(e,listbox))
+        listbox.grid(row=0,column=0,sticky="nwse")
+
+        fileio.dropFiles(listbox,e.data)
+        processButton = ttk.Button(pdfListWindow, text="Process", command=lambda: run(filelist))
+        processButton.grid(row=1,column=0)
+
+
+    def logSelFile(self,event,listbox):
+        print("<<TreeviewSelect>>")
+        selected = listbox.focus()
+        print("selected: ",listbox.item(selected))
+        print("content:",listbox.item(selected)['values'])
 
     # Cleanup threads
     def exit(self):
@@ -580,6 +613,6 @@ class Config():
 
 
 if __name__ == "__main__":
-    root = tk.Tk()
+    root = tkinterdnd2.TkinterDnD.Tk()
     app = App(root)
     root.mainloop()

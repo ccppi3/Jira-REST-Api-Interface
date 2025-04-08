@@ -14,6 +14,7 @@ zip:
 installer: build-pyinstaller
 	iscc /dMyAppVersion=$(version) .\setup-generator.iss
 installer-debug: build-pyinstaller-debug
+	version = "$(version)-debug"
 	iscc /dMyAppVersion=$(version) .\setup-generator.iss
 
 refresh-version:
