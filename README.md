@@ -1,5 +1,15 @@
 # Jira-REST-Api-Interface
 An Interface to automaticaly create Jira Tickets via their REST-Api.
+# How to create a new release  
+- make your changes to the code  
+- commit your changes  
+- add a version tag with (x as numer):  
+> git tag -a x.x.x  
+- build the package:  
+> make installer  
+
+
+The installer will be in Output/jira-flow-x.x.x.exe
 
 # Main Use Case
 Main Purpose is to create a Ticket whenever there is an onboarding of a new employee.
