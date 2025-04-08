@@ -1,3 +1,6 @@
+#This is an abstraction library on top of pymupdf, it implements algorythms to detect table beginnings and margins inside PDF files
+#Author: Jonathan Wyss
+#
 ##NOTE
 ##Coordination origin in PDF is bottom left!
 ##But pymupdf has its origin in the top left
@@ -109,9 +112,12 @@ def transformPdfToPymupdf(page,x,y,w,h):
     return pymupdf.Rect(x,y,w,h) * ~page.transformation_matrix
 
 def transformRect(page,rect):
-    return rect * ~page.transformation_matrix
+    if rect:
+        return rect * ~page.transformation_matrix
+    else:
+        return False
 
-def getRectsInRange(page,border):
+def getRectsInRange(page,border,debug=False):
     data_drawings = page.get_drawings()
     #log_json(data_drawings)
     for strocke in data_drawings:
@@ -119,10 +125,13 @@ def getRectsInRange(page,border):
             rec = strocke["items"]
             rect = rec[0][1]
             if border.check(rect.x0,rect.y0):
+                if debug:
+                    log("RectInRange:")
+                    log_json(strocke)
                 yield rect
 
 
-def getTextInRange(page,border):
+def getTextInRange(page,border,debug=False):
     data_text = page.get_text("json",sort=True)
 
     text_parsed = json.loads(data_text)
@@ -134,15 +143,23 @@ def getTextInRange(page,border):
                 origin = line["spans"][0]["origin"]
                 rectBbox = pymupdf.Rect(origin[0],origin[1],0,0)
                 if border.check(rectBbox.x0,rectBbox.y0):
-                    log("text:",text)
-                    log("rect:",rectBbox)
-                    yield text,rectBbox
+                    font=line["spans"][0]["font"]
+                    size=line["spans"][0]["size"]
+                    if debug:
+                        log("----",text,"----")
+                        log("%%%%",font,"%%%%")
+                        log_json(line)
+                    #log("text:",text)
+                    #log("rect:",rectBbox)
+                    yield text,rectBbox,font,size
         else:
             log("no lines key found")
             
 
     #log_json(text_parsed)
 
+def RectToBorder(rect):
+    return Border(rect.x0,rect.y0,rect.x1,rect.y1,0)
 
 def checkBorderDown(page,rectOrigin):#returns the nearest line downwoards to a given rect
     data_drawings = page.get_drawings()
@@ -192,11 +209,11 @@ def getEndOfTables(page,fieldName):
     log("endy:",endy)
     return endy
 
-def searchForTable(page,tableNames):
+def searchForTable(page,tableNames,pageNr,fileName):
     tables = []
     for name in tableNames:
       for rec in page.search_for(name):
-          tables.append(Tbl(rec,name))
+          tables.append(Tbl(rec,name,fileName,pageNr))
     for x in tables:
         log("tables at: ",transformRect(page,x.rec))
     log("len table:",len(tables))
@@ -222,6 +239,193 @@ def searchForTable(page,tableNames):
                 log("pop table:", tables[i], "in favor of: ",a)
                 tables.pop(i)
     return tables
+
+def detectTableRows(page,table):
+    ty=4
+    tx=2
+    rowNameList=[]
+    fields = []
+
+    border = Border(table.rec.x0-tx,table.rec.y0-ty,table.rec.x0+tx,table.rec.y0+ty,3)
+    log("border",table.rec.x0," ",1190-table.rec.y0)
+    #search for vertical line
+    for rect in getRectsInRange(page,border,debug=False):
+        if isLine(rect) == "vertical":
+            rectStartTable = pymupdf.Rect(rect.x0-tx,rect.y0-ty,rect.x0,rect.y0+ty+1)
+            log("rectStartTable:",transformRect(page,rectStartTable))
+            xLineTable = nextLineCross(page,rectStartTable,"vertical")
+            log("table size:",table.rec.x1)
+
+            #edge case handling fine tuned different settings
+            if xLineTable == False:
+                xLineTable = pymupdf.Rect(rect.x0-tx,rect.y0,table.rec.x1 *2,rect.y0)
+                temp = xLineTable
+                while temp != False:
+                    temp = nextConnectedLine(page,temp,direction="horizontal",t=10)
+                    log("next connected line")
+                    if temp != False:
+                        xLineTable = temp
+                    log("xLineTable2:",xLineTable)
+                xLineTable.x0 = rect.x0-tx
+
+
+
+            log("xLineTable:",transformRect(page,xLineTable))
+            #borderTitle = Border(xLineTable.x0,xLineTable.y0,xLineTable.x1,xLineTable.y1+10,5)
+            rectBottomTable = pymupdf.Rect(xLineTable.x0,xLineTable.y1,xLineTable.x1,table.rec.y1)
+            xLineBottomTable = nextLineCross(page,rectBottomTable,"vertical")
+            log("xLBottomTable",transformRect(page,xLineBottomTable))
+            
+            for field in getFieldsInRange(\
+                    page,pymupdf.Rect(\
+                    xLineTable.x0, xLineTable.y1, xLineTable.x1,table.rec.y1 \
+                    )):
+                log(transformRect(page,field))
+                fields.append(field)
+
+            for fieldRow in getHeader(page,fields,xLineTable):
+                log("fieldrow:",transformRect(page,fieldRow))
+                fullText = ""
+                i=0
+                for text,rect,font,size in getTextInRange(page,RectToBorder(fieldRow)):
+                    text = text.strip()
+                    if text:
+                        splitText = cutTextOverRect(page,fieldRow,text,font,size)
+                        if not splitText:
+                            rowNameList.append(text)
+                        else:
+                            for txt in splitText:
+                                rowNameList.append(txt)
+
+
+    return rowNameList
+
+def getHeader(page,fields,rectTable,thresold=10):
+    lowestY = None
+    filteredFields = []
+    for field in fields:
+        if abs(rectSize(rectTable,direction='x') - rectSize(field,direction='x')) > thresold:
+            sizeTable = rectSize(rectTable,direction='x')
+            sizeField = rectSize(field,direction='x')
+            size = sizeTable - sizeField
+            fullText = ""
+            for text,rect,font,size in getTextInRange(page,RectToBorder(field),debug=False):
+                fullText = fullText + text
+
+            log("DataField:",transformRect(page,field),"field size:",sizeField,"text: ",text)
+
+            #find lowest row y
+            if lowestY == None:
+                lowestY = field.y0
+            else:
+                if field.y0 < lowestY:
+                    lowestY = field.y0
+            filteredFields.append(field)
+    log("lowest row:",lowestY)
+
+    fieldsRow = []
+    for field in filteredFields:
+        if round(field.y0,1) == round(lowestY,1):#is it in arow?
+            fieldsRow.append(field)
+    return fieldsRow
+
+def cutTextOverRect(page,rect,text,font,size=9):
+    _len=0
+    size = rectSize(rect,direction='x')
+    try:
+        font = pymupdf.Font(font)
+    except:
+        log("font",font,"not found, using helv")
+        font = pymupdf.Font("helv")
+
+    if len(text.strip().split(" "))>1:
+        _len = font.text_length(text)
+        if size - _len < -10:
+            log("text oversized!",level=err.ERROR)
+            log("font:",font)
+            log("len of field:",size,"len of word:", _len,"text:",text)
+            log("len split",len(text.strip().split(" ")))
+            return text.strip().split(" ") 
+
+
+def rectSize(rect,direction="x"):
+    if direction=='x':
+        return abs(rect.x1 - rect.x0)
+    if direction=='y':
+        return abs(rect.y1 - rect.y0)
+
+def getFieldsInRange(page,rect,borderWidth=3):
+    t=2
+    border = Border(rect.x0-t,rect.y0-t,rect.x1+t,rect.y1+borderWidth,1)
+    for field in getRectsInRange(page,border):
+        if not isLine(field):
+            yield field
+#searches in a given direction and detects a line witch is 90 degree to it
+def nextLineCross(page,rect,direction,borderWidth=3):
+    t = 2
+    if direction=="vertical":
+        border = Border(rect.x0-t,rect.y0-t,rect.x1+t,rect.y1+borderWidth,1)
+        for rectNew in getRectsInRange(page,border,debug=False):
+            if isLine(rectNew) == "horizontal":
+                return rectNew
+        else:
+            return False
+    if direction=="horizontal":
+        border = Border(rect.x1-t,rect.y0-t,rect.x1+t,rect.y0+borderWidth,1)
+        for rectNew in getRectsInRange(page,border):
+            if isLine(rectNew) == "vertical":
+                return rectNew
+        else:
+            return False
+
+def nextConnectedLine(page,rect,direction,borderWidth=3,t=4):
+    if direction=="vertical":
+        border = Border(rect.x0-t,rect.y1-t,rect.x0+t,rect.y1+borderWidth,1)
+        for rectNew in getRectsInRange(page,border):
+            if isLine(rectNew) == "vertical":
+                return rectNew
+        else:
+            return False
+    if direction=="horizontal":
+        border = Border(rect.x1-t,rect.y0-borderWidth,rect.x1+t,rect.y1+borderWidth,1)
+        for rectNew in getRectsInRange(page,border):
+            log("rects in range:",rectNew)
+            if isLine(rectNew) == "horizontal":
+                return rectNew
+        else:
+            log("no next line found, border:",border)
+            return False
+    else:
+        log("direction unkown argument:",direction,level=err.ERROR)
+
+
+def endHorizontalLine(page,rect,borderWidth=3):
+    t=2
+    border2 = Border(rect.x0-t,rect.y0-t,rect.x0+t,rect.y0+borderWidth,1)
+    for rectNew in getRectsInRange(page,border2):
+        if isLine(rectNew) == "horizontal":
+            return endHorizontalLine(page,rectNew)
+    else:#when loop finished
+        return rectNew.x1
+
+            #only follow one horizontal line if there are multiple
+
+
+
+def isLine(rect,thresold = 3):
+    vertical = False
+    horizontal = False
+    if abs(rect.x1  - rect.x0) < thresold: 
+        vertical = True
+    if abs(rect.y1 - rect.y0) < thresold:
+        horizontal = True
+    if horizontal == True and vertical == True:
+        return "dot"
+    elif horizontal == True:
+        return "horizontal"
+    elif vertical == True:
+        return "vertical"
+
 
 def searchTableEnd(page,table_full): #search the table border by moving to the left
     table = table_full.rec
@@ -258,9 +462,11 @@ def searchTableDown(page,table_full):
     return False
 
 class Tbl:
-    def __init__(self,rec,name):
+    def __init__(self,rec,name,fileName,pageNumber):
         self.rec = rec
         self.name = name
+        self.fileName = fileName
+        self.pageNumber = pageNumber
         self.rowNameList = []
     def getName(self):
         return self.name
@@ -283,6 +489,7 @@ class Tables:
             self.count = 0
     def __init__(self,filename):
         self.doc = pymupdf.open(filename)
+        self.fileName = filename
         self.pages = self.Page()
         self.countPages()
 
@@ -291,13 +498,14 @@ class Tables:
         return self.pages.count
     def selectPage(self,nr):
         self.pages.selected = self.doc[nr]
+        self.nr = nr
         return self.pages.selected
     def setTableNames(self,names):
         self.tableNames = names
         self.getTables(self.pages.selected)
         return self.tables
     def getTables(self,page):
-        self.tables = searchForTable(page,self.tableNames)
+        self.tables = searchForTable(page,self.tableNames,self.nr,self.fileName)
     def selectTable(self,nr):
         self.selected_table = self.tables[nr]
     def selectTableByObj(self,obj):
@@ -356,7 +564,7 @@ class Tables:
                             log("getRectsInRange:",string.strip())
                             listA.append(string.strip())
 
-                    for i,[text,rect] in enumerate(getTextInRange(page,border)):
+                    for i,[text,rect,font,size] in enumerate(getTextInRange(page,border)):
                         string = text
                         log("rect(",i,"):",transformRect(page,rect))
                         if string.strip():
