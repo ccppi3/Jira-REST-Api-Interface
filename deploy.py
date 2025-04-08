@@ -10,10 +10,9 @@ def amIExe():
         return False
 
 def getVersionGit():
-    version = subprocess.run(["git","tag"],capture_output = True, text=True)
-    print("Git tells version (full):",version.stdout)
-    print("Git tells version (cut):",version.stdout)
-    return version.stdout
+    version = subprocess.run(["git","describe","--tags"],capture_output = True, text=True)
+    print("Git tells version (full):",version.stdout.strip())
+    return version.stdout.strip()
 
 def writeVersionFile(version, file="exeVersionInfo.txt"):
     buffer = []
@@ -34,7 +33,7 @@ def writeVersionFile(version, file="exeVersionInfo.txt"):
                 for i,a in enumerate(version):
                     line.append(a)
                     #line[posNbr + i] = a    
-                sLine = slice(0,posNbr + i)
+                sLine = slice(0,posNbr + i + 1)
                 line = line[sLine]
                 line = ''.join(line)#create a string out of a list
                 line = line + "\')])\n"

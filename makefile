@@ -1,4 +1,4 @@
-version = $(shell git tag)
+version = $(shell git describe --tags)
 build-pyinstaller: refresh-version
 	@echo "build using using pyinstaller"
 	pyinstaller .\gui.py --version-file exeVersionInfo.txt --windowed --noconfirm --name "jira-flow" --add-data "jira.ico;." --add-data ".env;." --add-data ".\TemplatePayload.json;." --add-data ".\help.txt;." --hiddenimport win32timezone --icon .\jira.ico
