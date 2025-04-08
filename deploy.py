@@ -90,9 +90,9 @@ def getVersionsExe(path=getResourcePath(""),info_str="ProductVersion"):
         "OriginalFilename",
         "SpecialBuild",
     )
-    if amIExe():
+    if amIExe():#we run as deployed version
         path = path + "..\\jira-flow.exe"
-    else: # we run in a dev env
+    else: # we run in a dev env sow we run a test against another exe
         path = "C:\\Program Files\\Jira-Flow\\jira-flow.exe"
     print("path to exe:",path)
 
