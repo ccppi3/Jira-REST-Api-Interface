@@ -74,12 +74,7 @@ class App:
         self.master.dnd_bind("<<Drop>>",self.showPdfListBox )
 
     def showPdfListBox(self,e):
-        class File():
-            def __init__(self,creationDate,path):
-                self.creationDate = creationDate
-                self.path = path
-        filelistObj = []
-
+        
         print("showPdfListBox")
         pdfListWindow = tk.Toplevel(self.master)
         pdfListWindow.iconbitmap(getResourcePath("jira.ico"))
@@ -90,15 +85,11 @@ class App:
         listbox.pack(fill="both",expand=True)
 
         filelist = fileio.dropFiles(listbox,e.data)
-        
-        for file in filelist:
-            log("cant stop non existing widget")
-            filelistObj.append(File("0.0.0",file))
 
         parser = main.asyncParser()
         
         processButton = ttk.Button(pdfListWindow, text="Process", \
-                command=lambda: parser.run(filelistObj,self.tables,appMaster=self, \
+                command=lambda: parser.run(filelist,self.tables,appMaster=self, \
                 label=self.statusLabel,bar = True))
         processButton.pack()
 
@@ -107,6 +98,9 @@ class App:
         selected = listbox.focus()
         print("selected: ",listbox.item(selected))
         print("content:",listbox.item(selected)['values'])
+        if listbox.item(selected)['text'] == "Delete" :
+            parent = listbox.item(selected)['values'][0]
+            listbox.delete(parent)
 
     # Cleanup threads
     def exit(self):

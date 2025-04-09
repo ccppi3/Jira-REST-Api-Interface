@@ -25,7 +25,8 @@ def dropFiles(listbox,data):
             line=line.replace("{","").replace("}","")
             name = line.split("/")
             name = name[len(name)-1]
-            listbox.insert("","end",text=name,value=str(line))
+            indexChild = listbox.insert("","end",text=name,value=str(line))
+            listbox.insert(indexChild,"end",text="Delete",value=indexChild)
         else:
             print("wrong filetype:",line[len(line)-4:])
     return filelist

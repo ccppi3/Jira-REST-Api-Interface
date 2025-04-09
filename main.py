@@ -130,6 +130,19 @@ def printStatistics(uidsMail,newAdded,newFileList):
 
 class asyncParser():
     def run(self,filelist,tables,appMaster=None,label=None,bar=None):
+        class File():
+            def __init__(self,creationDate,path):
+                self.creationDate = creationDate
+                self.path = path
+        def createFileListObj(filelist):
+            filelistObj = []
+            for file in filelist:
+                log("cant stop non existing widget")
+                filelistObj.append(File("0.0.0",file))
+            return filelistObj
+
+        filelist = createFileListObj(filelist)
+
         parsingThread = threading.Thread(target=self.thread, \
                 args=(filelist,tables,appMaster,label,bar))
         parsingThread.start()
