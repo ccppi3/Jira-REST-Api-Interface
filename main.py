@@ -4,6 +4,10 @@ import os
 import copy
 import com
 import ticket
+import threading
+import pathlib
+
+from tkinter import ttk
 from pop3 import log,err
 import pythoncom
 from gui import getResourcePath
@@ -123,6 +127,51 @@ def printStatistics(uidsMail,newAdded,newFileList):
     log("I checked ",len(list(uidsMail))," uids, processed ",len(newAdded)," new mails and downloaded ",len(newFileList)," files\033[0m",level=err.NONE);
     log("\033[0m",level=err.NONE)#ansi reset color
 
+
+class asyncParser():
+    def run(self,filelist,tables,appMaster=None,label=None,bar=None):
+        parsingThread = threading.Thread(target=self.thread, \
+                args=(filelist,tables,appMaster,label,bar))
+        parsingThread.start()
+
+    def thread(self,filelist,tables,appMaster=None,label=None,bar=None):
+        def createBar():
+            if appMaster.master:
+                statusBar = ttk.Progressbar(appMaster.master, mode="indeterminate")
+                statusBar.pack()
+                statusBar.start()
+                return statusBar
+            else:
+                log("No masterwindow specified skip progressbar")
+        def destroyBar(statusBar):
+            try:
+                statusBar.stop()
+                statusBar.destroy()
+            except:
+                log("cant stop non existing widget")
+
+        print("filelist:",filelist)
+        if bar:
+            statusBar = createBar()
+
+        for ret in _runPdfParser(filelist):
+            if type(ret) == list:
+                tables = ret
+            else:
+                if label:
+                    label.config(text="Status:" + str(ret))
+        if bar:
+            destroyBar(statusBar)
+        if label:
+            label.config(text="Done Parsing")
+        if appMaster: 
+            self.displayInTabs(appMaster,tables)
+
+    def displayInTabs(self,appMaster,tables):
+        appMaster.initTabs(tables)
+        
+
+
 def _runPdfParser(newFileList): #helper function witch wraps all the parsing calls, and copys the volatile data into a non volatile memory
     tableDataList = []
     for file in newFileList:
@@ -137,7 +186,9 @@ def _runPdfParser(newFileList): #helper function witch wraps all the parsing cal
                 company = "Unknown"
 
             log("Parse page ",pageNr," of file ",file,level=err.NONE)
-            yield "Parse:" + str(file).split("\\")[len(str(file).split("\\"))-1] + " Page " + str(pageNr)
+            msg = pathlib.PurePath(str(file.path)).parts # | regex and
+            print(msg)
+            yield "Parse:" + msg[len(msg)-1] + " Page " + str(pageNr)
             tables.selectPage(pageNr)
             listTable = tables.setTableNames(["Tabelle 1","NEUEINTRITT","Arbeitsplatzwechsel","NEUEINTRITTE"])
             for i,table in enumerate(listTable):
@@ -168,7 +219,7 @@ def tablesToTicket(tableDataList,check=True): #tackes the tabledata and creates 
         if "arbeitsplatzwechsel" in str(table.name).lower():
             ticketTable = ticket.Ticket(table,tempObjs,filename,table.company,"arbeitsplatzwechsel")
         elif "neueintritte" in str(table.name).lower():
-            ticketTable = ticket.Ticket(table,tempObjs,filename,table.company,"neueintritt")
+           ticketTable = ticket.Ticket(table,tempObjs,filename,table.company,"neueintritt")
         elif "neueintritt" in str(table.name).lower():
             ticketTable = ticket.Ticket(table,tempObjs,filename,table.company,"neueintritte")
         ticketTable.createTicket(check=False)

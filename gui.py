@@ -74,26 +74,33 @@ class App:
         self.master.dnd_bind("<<Drop>>",self.showPdfListBox )
 
     def showPdfListBox(self,e):
-        def run(filelist):
-            for ret in main._runPdfParser(filelist):
-                if type(ret) == list:
-                    tableDataList = ret
-                else:
-                    yield ret
+        class File():
+            def __init__(self,creationDate,path):
+                self.creationDate = creationDate
+                self.path = path
+        filelistObj = []
 
         print("showPdfListBox")
         pdfListWindow = tk.Toplevel(self.master)
         pdfListWindow.iconbitmap(getResourcePath("jira.ico"))
         pdfListWindow.title("Pdfs to Process")
 
-        listbox = ttk.Treeview(pdfListWindow,show="tree")
+        listbox = ttk.Treeview(pdfListWindow)
         listbox.bind("<<TreeviewSelect>>",lambda e: self.logSelFile(e,listbox))
-        listbox.grid(row=0,column=0,sticky="nwse")
+        listbox.pack(fill="both",expand=True)
 
-        fileio.dropFiles(listbox,e.data)
-        processButton = ttk.Button(pdfListWindow, text="Process", command=lambda: run(filelist))
-        processButton.grid(row=1,column=0)
+        filelist = fileio.dropFiles(listbox,e.data)
+        
+        for file in filelist:
+            log("cant stop non existing widget")
+            filelistObj.append(File("0.0.0",file))
 
+        parser = main.asyncParser()
+        
+        processButton = ttk.Button(pdfListWindow, text="Process", \
+                command=lambda: parser.run(filelistObj,self.tables,appMaster=self, \
+                label=self.statusLabel,bar = True))
+        processButton.pack()
 
     def logSelFile(self,event,listbox):
         print("<<TreeviewSelect>>")
@@ -241,6 +248,7 @@ class App:
             tab.deleteButton = ttk.Button(tab, text="Delete Ticket", width=15, command=deleteWrapper)
             tab.deleteButton.grid(row=3, column=1, columnspan=2, pady=5, padx=5, sticky="E")
             self.createTable(tab,tab.table)
+    
     # Handle confirm create button click
     def confirmCreateButtonHandler(self,tab):
         # Close confirm window
@@ -607,7 +615,9 @@ class Config():
             return "error writing file"
         else:
             print("Wrote .env file")
-            messagebox.showinfo("Config","Config sucessfull saved\n"+str(com.getAppDir() + "config"))
+            messagebox.showinfo("Config","Config sucessfull saved\n" \
+                    + str(com.getAppDir() + "config")) + "\n" \
+                        
             load_dotenv(com.getAppDir() + "config")
      
 
