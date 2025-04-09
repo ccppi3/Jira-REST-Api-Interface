@@ -33,12 +33,6 @@ load_dotenv(getAppDir() + "config")
 
 pythoncom.CoInitialize()
 
-
-
-
-
-
-
 filterName = os.getenv("FilterName")
 class Entry:
     def __init__(self,uid,path,creationDate):

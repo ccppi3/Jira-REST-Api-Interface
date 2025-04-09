@@ -50,6 +50,7 @@ def generateRow(_list):
 # Ticket Class
 class Ticket:
     def __init__(self,table, data, fileName, company, ticketType):
+        load_dotenv(com.getAppDir() + "config")
         # Api info
         self.tableObj = table
         self.url = os.getenv('IssueUrl')
@@ -59,6 +60,7 @@ class Ticket:
         self.requestCustomField = os.getenv('RequestTypeField')
         self.onboardKey = os.getenv('RequestOnBoardKey')
         self.changeKey = os.getenv('RequestChangeKey')
+        self.accountId = os.getenv('accountId')
         # Auth
         self.auth = HTTPBasicAuth(self.email, self.token)
         # Variable declarations
@@ -139,6 +141,7 @@ class Ticket:
         payload["fields"]["description"]["content"].append(self.table)
         payload["fields"]["summary"] = self.company.capitalize() + " " + self.summary.capitalize()
         payload["fields"]["labels"] = self.label if self.label else []
+        payload["fields"]["reporter"]["id"] = self.accountId
 
         if self.ticketType != "arbeitsplatzwechsel":
             payload["fields"][self.requestCustomField] = portalKey + "/" + self.onboardKey  #portalkey / requesttype key

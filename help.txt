@@ -14,3 +14,5 @@ text=Describes the custom jira field which is to set on a match for example: cus
 text=The key used for the RequestTypeField, to choose "Onboard new employees" (Usually doesnt need to be changed)
 [RequestChangeKey]
 text=The key used for the RequestTypeField, to choose "Workplace Change" (Usually doesnt need to be changed)
+[accountId]
+text=Please go to https://santis.atlassian.net/rest/api/2/myself and copy the accountId into this field
