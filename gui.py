@@ -22,6 +22,8 @@ from CTkMenuBar import CustomDropdownMenu as ctkDropDown
 import CTkMenuBar
 from dotenv import load_dotenv
 import deploy
+import utils.fileio as fileio
+import tkinterdnd2
 
 
 # Inizialize COM-Interface
@@ -67,6 +69,38 @@ class App:
 
         self.statusLabel = ttk.Label(self.master, text="Status: " + self.status)
         self.statusLabel.pack()
+
+        self.master.drop_target_register(tkinterdnd2.DND_FILES)
+        self.master.dnd_bind("<<Drop>>",self.showPdfListBox )
+
+    def showPdfListBox(self,e):
+        
+        print("showPdfListBox")
+        pdfListWindow = tk.Toplevel(self.master)
+        pdfListWindow.iconbitmap(getResourcePath("jira.ico"))
+        pdfListWindow.title("Pdfs to Process")
+
+        listbox = ttk.Treeview(pdfListWindow)
+        listbox.bind("<<TreeviewSelect>>",lambda e: self.logSelFile(e,listbox))
+        listbox.pack(fill="both",expand=True)
+
+        filelist = fileio.dropFiles(listbox,e.data)
+
+        parser = main.asyncParser()
+        
+        processButton = ttk.Button(pdfListWindow, text="Process", \
+                command=lambda: parser.run(filelist,self.tables,appMaster=self, \
+                label=self.statusLabel,bar = True))
+        processButton.pack()
+
+    def logSelFile(self,event,listbox):
+        print("<<TreeviewSelect>>")
+        selected = listbox.focus()
+        print("selected: ",listbox.item(selected))
+        print("content:",listbox.item(selected)['values'])
+        if listbox.item(selected)['text'] == "Delete" :
+            parent = listbox.item(selected)['values'][0]
+            listbox.delete(parent)
 
     # Cleanup threads
     def exit(self):
@@ -165,11 +199,14 @@ class App:
         l1.pack(padx=10,pady=10)
         l2 = ttk.Label(helpWindow,text="http://wiki.santisedu.local/books/jiraflow",cursor="hand2",relief='raised',foreground='blue')
         l2.pack(padx=10,pady=10)
+        l21 = ttk.Label(helpWindow,text="https://gitlab.santis-basis.ch/jonathan.wyss/jira-rest-api-interface",cursor="hand2",relief='raised',foreground='blue')
+        l21.pack(padx=10,pady=10)
         l3 = ttk.Label(helpWindow,text="https://github.com/ccppi3/Jira-REST-Api-Interface",cursor="hand2",relief='raised',foreground='blue')
         l3.pack(padx=10,pady=10)
         l4 = ttk.Label(helpWindow,text="https://id.atlassian.com/manage-profile/security/api-tokens",cursor="hand2",relief='raised',foreground='blue')
         l4.pack(padx=10,pady=10)
         l2.bind("<Button-1>",lambda e:self.hyperlinkCallback(l2.cget("text")))
+        l21.bind("<Button-1>",lambda e:self.hyperlinkCallback(l21.cget("text")))
         l3.bind("<Button-1>",lambda e:self.hyperlinkCallback(l3.cget("text")))
         l4.bind("<Button-1>",lambda e:self.hyperlinkCallback(l4.cget("text")))
 
@@ -205,6 +242,7 @@ class App:
             tab.deleteButton = ttk.Button(tab, text="Delete Ticket", width=15, command=deleteWrapper)
             tab.deleteButton.grid(row=3, column=1, columnspan=2, pady=5, padx=5, sticky="E")
             self.createTable(tab,tab.table)
+    
     # Handle confirm create button click
     def confirmCreateButtonHandler(self,tab):
         # Close confirm window
@@ -571,12 +609,14 @@ class Config():
             return "error writing file"
         else:
             print("Wrote .env file")
-            messagebox.showinfo("Config","Config sucessfull saved\n"+str(com.getAppDir() + "config"))
+            messagebox.showinfo("Config","Config sucessfull saved\n" \
+                    + str(com.getAppDir() + "config")) + "\n" \
+                        
             load_dotenv(com.getAppDir() + "config")
      
 
 
 if __name__ == "__main__":
-    root = tk.Tk()
+    root = tkinterdnd2.TkinterDnD.Tk()
     app = App(root)
     root.mainloop()

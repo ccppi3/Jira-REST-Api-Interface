@@ -8,3 +8,4 @@ CTKtooltip
 customtkinter
 sv_ttk
 ctkmenubar
+tkinterdnd2
