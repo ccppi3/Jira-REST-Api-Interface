@@ -591,10 +591,18 @@ class Config():
         else:
             for  section in sections:
                 try:
-                    helpList.append((section,self.helpParser[section]['text']))
-                except:
+                    try:
+                        link = self.helpParser[secttion]['link']
+                    except:
+                        link = "None"
+
+                    helpList.append((section, \
+                            self.helpParser[section]['text'], \
+                            link))
+                except Exception as e:
                     print("Error parsing help.txt file, look for syntax errors")
-                    return "Parsing error help.txt"
+                    print("Error: ",e)
+                    return "Parsing error help.txt \n" + e
             return helpList
 
     def _saveConfig(self):
