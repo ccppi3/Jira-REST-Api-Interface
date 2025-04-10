@@ -8,7 +8,14 @@ import requests, json, os
 from requests.auth import HTTPBasicAuth
 from dotenv import load_dotenv
 import json
+import pdf
+from pop3 import err as err
+import copy
+
+# load .env file
+load_dotenv()
 import inspect
+import com
 from pop3 import log,err
 from gui import getResourcePath
 

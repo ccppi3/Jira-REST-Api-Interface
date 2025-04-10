@@ -110,7 +110,10 @@ def getVersionsExe(path=getResourcePath(""),info_str="ProductVersion"):
 
 if not amIExe():
     version = getVersionGit()
-    writeVersionFile(version)
+    if version:
+        writeVersionFile(version)
+    else:
+        print("could not get version from Git, check 'git tags'")
 
 if "__main__" in __name__:
     version = getVersionGit()
