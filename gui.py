@@ -541,6 +541,8 @@ class Config():
             RequestOnBoardKey = "newhires"
                 
             RequestChangeKey = "d3218f88-1017-4215-8b9c-194ea96ea6dd"
+
+            accountId = "000000:000000-0000-00000-000-0000"
             """        
         with open(com.getAppDir() + "config", 'x') as file:
             file.write(cfg)
@@ -566,8 +568,14 @@ class Config():
                 print("You are using an old style .env, please update the config to have a [CONFIG] Section")
                 return "Section Error"
             else:
+
                 for element in configSection:
                     configList.append((element,configSection[element]))
+
+                #migration 1.2.0 -> 1.2.1
+                if "accountId" not in configSection:
+                    configList.append(("accountId","00000-0000000000000000000"))
+                    log("No accountId in config, add section to config")
                 return configList
 
     def _loadHelpText(self):
