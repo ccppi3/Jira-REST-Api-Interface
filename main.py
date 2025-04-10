@@ -221,7 +221,8 @@ def tablesToTicket(tableDataList,check=True): #tackes the tabledata and creates 
     log("count tables: ",len(tableDataList),level=err.INFO)
     for table in tableDataList:
         log("table: ",table,level=err.INFO)
-        filenameList = str(table.fileName).split("\\")
+
+        filenameList = pathlib.PurePath(str(table.fileName)).parts # | regex and
         filename = filenameList[len(filenameList)-1]
         print("--------¦",table.name,"¦-------------¦","filename: ",filename, "pageNr:", table.pageNumber,"Date: ",table.creationDate)
         tempObjs = []
@@ -239,7 +240,7 @@ def tablesToTicket(tableDataList,check=True): #tackes the tabledata and creates 
 
 def tableToTicket(table,check=True):
         log("table: ",table,level=err.INFO)
-        filenameList = str(table.fileName).split("\\")
+        filenameList = pathlib.PurePath(str(table.fileName)).parts # | regex and
         filename = filenameList[len(filenameList)-1]
         print("--------¦",table.name,"¦-------------¦","filename: ",filename, "pageNr:", table.pageNumber,"Date: ",table.creationDate)
         tempObjs = []
