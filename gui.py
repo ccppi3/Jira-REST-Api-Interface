@@ -497,9 +497,9 @@ class Config():
         # We create an object attribute for each config entry (metaprogramming)
         # We add a toolbox for each textbox
         for i,entry in enumerate(listOfEntries):
+            #Serch for matching entry in helpText against labelname
             for txt in helpText:
                 if(txt[0] == entry[0]):
-                    print("found:",txt)
                     link = txt[2]
                     break
             else:
@@ -509,10 +509,9 @@ class Config():
             tmpObj.grid(row=i,column=0)
             if link != "None":
                 tmpObj.configure(text_color='blue',cursor="hand2")
-                tmpObj.bind("<Button-1>",lambda e:browser.hyperlinkCallback(link))
+                tmpObj.bind("<Button-1>",partial(browser.hyperlinkCallback,link))
                 tmpObj.bind("<Enter>",partial(browser.hyperlinkDoUnderline,tmpObj,True))
                 tmpObj.bind("<Leave>",partial(browser.hyperlinkDoUnderline,tmpObj,False))
-
 
             objListText.append(ck.CTkTextbox(self.window,height=1,width = 500))
             tmpObj2 = objListText[i]
