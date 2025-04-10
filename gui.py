@@ -278,14 +278,14 @@ class App:
                         messagebox.showerror("Error",str(status) + "\nAccess to Jira was denied, is your jira token valid?")
                     elif status >= 300:
                         messagebox.showerror("Error",str(status) + "\nHttpError")
-
+                    else:
                 callbackQueue.put("destroy")
 
     def fetchThread(self,callbackQueue,outlook):
         pythoncom.CoInitialize()
         for ret in main.run(outlook):
             if type(ret) == list:
-                self.tables = ret
+                self.tables = ret#returns list of type main.TableData
             else:
                 if "ERROR" in ret:
                     log("fetchThread:",ret,level=err.ERROR)
@@ -314,6 +314,8 @@ class App:
         self.statusBar = ttk.Progressbar(self.master, mode="indeterminate")
         self.statusBar.pack()
         self.statusBar.start()
+        
+        self.tables = []
 
         callbackQueue = queue.Queue()
          
@@ -322,16 +324,18 @@ class App:
         self.childThread.join() #wait for the child thread
         msg = callbackQueue.get()
         print("callbackmsg:",msg)
+        
 
         self.initTabs(self.tables)
         # Reavtivate buttons
         try:
             tab.confirmButton.config(state=tk.NORMAL)
-            tab.deleteButton.confi(state=tk.NORMAL)
+            tab.deleteButton.config(state=tk.NORMAL)
         except:
             log("noTabs")
         if msg == "destroy":
             tab.destroy()
+
 
         self.refreshButton.config(state=tk.NORMAL)
         # Remove loading bar
@@ -645,7 +649,7 @@ class Config():
             messagebox.showinfo("Config","Config sucessfull saved\n" \
                     + str(com.getAppDir() + "config")) + "\n" \
                         
-            load_dotenv(com.getAppDir() + "config")
+            load_dotenv(com.getAppDir() + "config",override=True)
      
 
 

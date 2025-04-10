@@ -55,16 +55,8 @@ class TableData:
                 print(ob,"/",getattr(entry,ob))
 
 
-#load data from .env
-load_dotenv(com.getAppDir() + "config")
-filterName = os.getenv('FilterName')
-password = os.getenv('MailPassword')
-PDFNAMEFILTER = os.getenv('PdfNameFilter')
 
-#settings
-host = os.getenv('Host')
-user = os.getenv('Mail')
-port = os.getenv('Port') 
+
 
 pdf.setDebugLevel(err.ULTRA,_filter="")
 pop3.setDebugLevel(err.ULTRA)
@@ -74,6 +66,18 @@ pop3.setDebugLevel(err.ULTRA)
 #    os.makedirs(cwd + "/downloads")
 
 def run(outlook):
+#load data from .env
+    load_dotenv(com.getAppDir() + "config",override=True)
+    filterName = os.getenv('FilterName')
+    password = os.getenv('MailPassword')
+    global PDFNAMEFILTER
+    PDFNAMEFILTER = os.getenv('PdfNameFilter')
+
+    #settings
+    host = os.getenv('Host')
+    user = os.getenv('Mail')
+    port = os.getenv('Port') 
+
     pythoncom.CoInitialize()
 
     newAdded = []
@@ -273,7 +277,7 @@ def _removeDoubles(newFileList):
     toBeRemoved.clear()
     return newFileList
 
-def _filterList(fileNameList,pdfNameFilter=PDFNAMEFILTER): #filter out: is a plausible pdf?
+def _filterList(fileNameList,pdfNameFilter): #filter out: is a plausible pdf?
     for i,fileName in enumerate(fileNameList):
         if pdfNameFilter not in fileName:
             toBeRemoved.append(i)

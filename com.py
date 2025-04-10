@@ -29,7 +29,7 @@ PATH = tempfile.gettempdir() + "\\"
 print(PATH)
 INBOXNR = 6
 
-load_dotenv(getAppDir() + "config")
+load_dotenv(getAppDir() + "config",override=True)
 
 pythoncom.CoInitialize()
 

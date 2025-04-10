@@ -13,7 +13,7 @@ from pop3 import err as err
 import copy
 
 # load .env file
-load_dotenv()
+load_dotenv(override=True)
 import inspect
 import com
 from pop3 import log,err
@@ -26,7 +26,7 @@ APPLOCAL = os.path.join(os.path.expanduser("~"),"AppData","Local")
 APPNAME = "Jira-Flow"
 APPDIR = os.path.join(APPLOCAL,APPNAME)
 APPDIR = APPDIR + "\\"
-load_dotenv(APPDIR + "config")
+load_dotenv(APPDIR + "config",override=True)
 
 # Gen Rows for table in ticket
 def generateRow(_list):
@@ -57,7 +57,7 @@ def generateRow(_list):
 # Ticket Class
 class Ticket:
     def __init__(self,table, data, fileName, company, ticketType):
-        load_dotenv(com.getAppDir() + "config")
+        load_dotenv(com.getAppDir() + "config",override=True)
         # Api info
         self.tableObj = table
         self.url = os.getenv('IssueUrl')
