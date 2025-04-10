@@ -24,6 +24,7 @@ from dotenv import load_dotenv
 import deploy
 import utils.fileio as fileio
 import tkinterdnd2
+import utils.browser as browser
 
 
 # Inizialize COM-Interface
@@ -490,25 +491,42 @@ class Config():
             changeHeaderColor(self.window,0xFFFFFF)
 
         helpText = self._loadHelpText()
-        
+        objListLabel = [] 
+        objListText = [] 
+
         # We create an object attribute for each config entry (metaprogramming)
         # We add a toolbox for each textbox
         for i,entry in enumerate(listOfEntries):
-            tmpObj = ck.CTkLabel(self.window,text=entry[0])
+            for txt in helpText:
+                if(txt[0] == entry[0]):
+                    print("found:",txt)
+                    link = txt[2]
+                    break
+            else:
+                link = "google.com"
+            objListLabel.append(ck.CTkLabel(self.window,text=entry[0]))
+            tmpObj = objListLabel[i]
             tmpObj.grid(row=i,column=0)
+            if link != "None":
+                tmpObj.configure(text_color='blue',cursor="hand2")
+                tmpObj.bind("<Button-1>",lambda e:browser.hyperlinkCallback(link))
+                tmpObj.bind("<Enter>",partial(browser.hyperlinkDoUnderline,tmpObj,True))
+                tmpObj.bind("<Leave>",partial(browser.hyperlinkDoUnderline,tmpObj,False))
 
-            tmpObj = ck.CTkTextbox(self.window,height=1,width = 500)
-            tmpObj.insert(tk.END,entry[1])
-            tmpObj.grid(row=i,column=1)
+
+            objListText.append(ck.CTkTextbox(self.window,height=1,width = 500))
+            tmpObj2 = objListText[i]
+            tmpObj2.insert(tk.END,entry[1])
+            tmpObj2.grid(row=i,column=1)
 
             for txt in helpText:
                 if(txt[0] == entry[0]):
                     tt.CTkToolTip(tmpObj,message=txt[1])
 
-            tmpObj.value = entry[1]
-            tmpObj.id = i
-            setattr(self.tkObjects,entry[0],tmpObj)
-
+            tmpObj2.value = entry[1]
+            tmpObj2.id = i
+            setattr(self.tkObjects,entry[0],tmpObj2)
+    
         # We apply batch configs for all elements in page
         self._tkConfigAll()
 
@@ -592,7 +610,7 @@ class Config():
             for  section in sections:
                 try:
                     try:
-                        link = self.helpParser[secttion]['link']
+                        link = self.helpParser[section]['link']
                     except:
                         link = "None"
 
