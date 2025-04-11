@@ -278,7 +278,6 @@ class App:
                         messagebox.showerror("Error",str(status) + "\nAccess to Jira was denied, is your jira token valid?")
                     elif status >= 300:
                         messagebox.showerror("Error",str(status) + "\nHttpError")
-                    else:
                 callbackQueue.put("destroy")
 
     def fetchThread(self,callbackQueue,outlook):
