@@ -17,10 +17,11 @@ from itertools import zip_longest
 PRESEARCH = 5 #The search funtion finds all ocurenses of a string we work arround this issue, bc we need exact matches with a look back of 5 point and reading at this position
 LOGFILTER = ""
 TBLLINE = 3 #sets the width ab when is considered a rect to be a line
+MAX_BORDER_WIDTH=1000
 
 def log_json(s):
     if int(DEBUG) > int(err.NONE):
-        print("----",json.dumps(s,indent=2,default=str),"\n")
+        #print("----",json.dumps(s,indent=2,default=str),"\n")
         file = open("debug-json.json","a")
         for x in s:
             pass
@@ -116,9 +117,13 @@ def transformRect(page,rect):
         return rect * ~page.transformation_matrix
     else:
         return False
+def transformYPoint(page,y):
+    return page.mediabox[3]-y
 
 def getRectsInRange(page,border,debug=False):
     data_drawings = page.get_drawings()
+    if debug:
+        log("[getRectsInRange] ",border)
     #log_json(data_drawings)
     for strocke in data_drawings:
         if strocke["items"][0][0]=="re":
@@ -131,13 +136,18 @@ def getRectsInRange(page,border,debug=False):
                 yield rect
 
 
-def getTextInRange(page,border,debug=False):
+def getTextInRange(page,border,debug=True):
     data_text = page.get_text("json",sort=True)
 
     text_parsed = json.loads(data_text)
+
+    #for a in text_parsed["blocks"]:
+    #    if a["type"] ==0: # 0 = text type, 1 = image type
+    #        print("textblock: ",json.dumps(a,indent=1))
     
     for block in text_parsed["blocks"]:
-        if "lines" in block.keys():
+        #if "lines" in block.keys():
+        if block["type"] == 0: #discard image entries and take all text entry blocks
             for line in block["lines"]:
                 text = line["spans"][0]["text"]
                 origin = line["spans"][0]["origin"]
@@ -152,8 +162,10 @@ def getTextInRange(page,border,debug=False):
                     #log("text:",text)
                     #log("rect:",rectBbox)
                     yield text,rectBbox,font,size
-        else:
-            log("no lines key found")
+        #else:
+        #    log("no lines key found")
+        #    log("block.keys: ",block.keys())
+            #log("type: ", block)
             
 
     #log_json(text_parsed)
@@ -212,50 +224,69 @@ def getEndOfTables(page,fieldName):
 def searchForTable(page,tableNames,pageNr,fileName):
     tables = []
     for name in tableNames:
-      for rec in page.search_for(name):
-          tables.append(Tbl(rec,name,fileName,pageNr))
+        for rec in page.search_for(name):
+            tables.append(Tbl(rec,name,fileName,pageNr))
+
     for x in tables:
-        log("tables at: ",transformRect(page,x.rec))
-    log("len table:",len(tables))
+        log("{searchForTable}tables at ",x.name,":",transformRect(page,x.rec))
+    log("\tcount tables:",len(tables))
     for i,table in enumerate(tables):
+        log("{searchForTable}Current tableName:",table.name)
         rec =  searchTableEnd(page,table) 
         if rec:
             table.rec.y0 = rec.y0
             table.rec.y1 = rec.y1
         else:
-            log("No table end found use algo2")
+            log("\t",table.name,"No table end found use algo2")
             rec = searchTableDown(page,table)
             if rec:
                 table.rec.y0 = rec.y0
                 table.rec.y1 = rec.y1
+                log("\tres algo2:")
+                print("\t\trec:",transformRect(page,table.rec))
             else:
-                log("no table found, giving up")
+                log("\t\tno table found, giving up")
 
             #search with other algorythm
     #remove double tables where if first point match remove the one witch seems to be a line
     for ai,a in enumerate(tables):
         for i in range(ai+1,len(tables)):
             if abs(a.rec.x0 - tables[i].rec.x0) < 1 and abs(a.rec.y0 - tables[i].rec.y0) < 1:
-                log("pop table:", tables[i], "in favor of: ",a)
+                log("\tpop table:", tables[i], "in favor of: ",a)
                 tables.pop(i)
+    
+   # tbl = page.find_tables()
+   # print("tables(find_tables():",tbl)
+
+   # for tb in tbl:
+   #     print("\t tbl:",tb.extract())
+   # input()
+
     return tables
 
 def detectTableRows(page,table):
+    #ty=4
+    #tx=2
     ty=4
     tx=2
     rowNameList=[]
     fields = []
+    rects = []
 
-    border = Border(table.rec.x0-tx,table.rec.y0-ty,table.rec.x0+tx,table.rec.y0+ty,3)
-    log("border",table.rec.x0," ",1190-table.rec.y0)
+    border = Border(table.rec.x0-tx-10,table.rec.y0-ty,table.rec.x0+tx,table.rec.y0+ty,3)
+    log("def border of table",table.rec.x0," ",page.bound().y1-table.rec.y0)
     #search for vertical line
     for rect in getRectsInRange(page,border,debug=False):
+        rects.append(rect)
+
+    log("Search for vertical line, count rects:",len(rects))
+    for rect in getRectsInRange(page,border,debug=False):
+        log("[detectTableRows]RectsinRange:",transformRect(page,rect))
         if isLine(rect) == "vertical":
             rectStartTable = pymupdf.Rect(rect.x0-tx,rect.y0-ty,rect.x0,rect.y0+ty+1)
             log("rectStartTable:",transformRect(page,rectStartTable))
             xLineTable = nextLineCross(page,rectStartTable,"vertical")
             log("table size:",table.rec.x1)
-
             #edge case handling fine tuned different settings
             if xLineTable == False:
                 xLineTable = pymupdf.Rect(rect.x0-tx,rect.y0,table.rec.x1 *2,rect.y0)
@@ -267,15 +298,13 @@ def detectTableRows(page,table):
                         xLineTable = temp
                     log("xLineTable2:",xLineTable)
                 xLineTable.x0 = rect.x0-tx
-
-
-
             log("xLineTable:",transformRect(page,xLineTable))
             #borderTitle = Border(xLineTable.x0,xLineTable.y0,xLineTable.x1,xLineTable.y1+10,5)
             rectBottomTable = pymupdf.Rect(xLineTable.x0,xLineTable.y1,xLineTable.x1,table.rec.y1)
             xLineBottomTable = nextLineCross(page,rectBottomTable,"vertical")
-            log("xLBottomTable",transformRect(page,xLineBottomTable))
             
+            log("xLBottomTable",transformRect(page,xLineBottomTable))
+
             for field in getFieldsInRange(\
                     page,pymupdf.Rect(\
                     xLineTable.x0, xLineTable.y1, xLineTable.x1,table.rec.y1 \
@@ -296,6 +325,9 @@ def detectTableRows(page,table):
                         else:
                             for txt in splitText:
                                 rowNameList.append(txt)
+        else:
+            log("/tline not vertical")
+            print("/trec:",transformRect(page,rect))
 
 
     return rowNameList
@@ -309,6 +341,7 @@ def getHeader(page,fields,rectTable,thresold=10):
             sizeField = rectSize(field,direction='x')
             size = sizeTable - sizeField
             fullText = ""
+            text= ""
             for text,rect,font,size in getTextInRange(page,RectToBorder(field),debug=False):
                 fullText = fullText + text
 
@@ -318,14 +351,14 @@ def getHeader(page,fields,rectTable,thresold=10):
             if lowestY == None:
                 lowestY = field.y0
             else:
-                if field.y0 < lowestY:
+                if field.y0 > lowestY:
                     lowestY = field.y0
             filteredFields.append(field)
-    log("lowest row:",lowestY)
+    log("lowest row:",transformYPoint(page,lowestY))
 
     fieldsRow = []
     for field in filteredFields:
-        if round(field.y0,1) == round(lowestY,1):#is it in arow?
+        if round(field.y0,1) == round(lowestY,1):#is it in a row?
             fieldsRow.append(field)
     return fieldsRow
 
@@ -364,10 +397,11 @@ def getFieldsInRange(page,rect,borderWidth=3):
 def nextLineCross(page,rect,direction,borderWidth=3):
     t = 2
     if direction=="vertical":
-        border = Border(rect.x0-t,rect.y0-t,rect.x1+t,rect.y1+borderWidth,1)
+        border = Border(rect.x0-t-10,rect.y0-t,rect.x1+t,rect.y1+borderWidth,1)
         for rectNew in getRectsInRange(page,border,debug=False):
             if isLine(rectNew) == "horizontal":
-                return rectNew
+                if(rect.y0 != rectNew.y0):
+                    return rectNew
         else:
             return False
     if direction=="horizontal":
@@ -432,32 +466,32 @@ def searchTableEnd(page,table_full): #search the table border by moving to the l
     border = Border(table.x0-10,table.y0-10,table.x0+10,table.y0+10,3)
     for rect in getRectsInRange(page,border):
         if abs(rect.x1 - rect.x0) < 3 and abs(rect.y0 - rect.y1) > 20: #is it a line? and filter out very short lines
-            log("Potential border of table:",transformRect(page,rect))
+            log("{searchTableEnd}(iterating rects in range)Potential border of table:",transformRect(page,rect))
             return rect
     return False
 
 def searchTableDown(page,table_full):
     biggesty = 0
     smallesty = None
-    t1 = 10
+    t1 = 15
     table = table_full.rec
     border = Border(table.x0-t1,table.y0-t1,table.x0+t1,table.y0+t1*5,3)
     for rect in getRectsInRange(page,border):
         if abs(rect.x1 - rect.x0) < 3: #and abs(rect.y0 - rect.y1) > 20: #is it a line? do not filter short lines
-            log("Potential border of table:",transformRect(page,rect))
+            #log("{searchTableDown}Potential border of table:",transformRect(page,rect))
             if(rect.y1 > biggesty):
                 biggesty = rect.y1
-                log("biggesty[mypfcoordinate]:",biggesty)
+            #    log("\tbiggesty[mypfcoordinate]:",biggesty)
             if not smallesty:
                 smallesty = rect.y0
             if(rect.y0 < smallesty):
                 smallesty = rect.y0
-                log("smallest[mypfcoordinate]:",smallesty)
+             #   log("\tsmallest[mypfcoordinate]:",smallesty)
     if rect:
         final_rect = rect
         final_rect.y1 = biggesty + 10
         final_rect.y0 = smallesty
-        log("table border calculated:",transformRect(page,final_rect))
+        log("\ttable border calculated:",transformRect(page,final_rect))
         return final_rect
     return False
 
@@ -506,6 +540,7 @@ class Tables:
         return self.tables
     def getTables(self,page):
         self.tables = searchForTable(page,self.tableNames,self.nr,self.fileName)
+        print("tableNames:",self.tableNames)
     def selectTable(self,nr):
         self.selected_table = self.tables[nr]
     def selectTableByObj(self,obj):
@@ -519,7 +554,7 @@ class Tables:
         table.entries = []
         table.state = self.State()
         page = self.pages.selected
-        table.border = Border(table.rec.x0,table.rec.y0,1000,table.rec.y1,5)
+        table.border = Border(table.rec.x0,table.rec.y0,MAX_BORDER_WIDTH,table.rec.y1,5)
         for init,rowName in enumerate(self.selected_table.rowNameList):
             if init == 0:
                 table.entries.append(Entry())
@@ -528,7 +563,7 @@ class Tables:
             for index,content in enumerate(_list):
                 if(index > len(table.entries)-1):
                     table.entries.append(Entry())
-                log("entry: ",table.entries[index],"_")
+                log("{PARSE TABLE} entry: ",table.entries[index],"_")
                 setattr(table.entries[index],rowName,content)
 
     def getObjectsFromTable(self):

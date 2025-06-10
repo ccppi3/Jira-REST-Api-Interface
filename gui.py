@@ -221,8 +221,9 @@ class App:
 
         for i,table in enumerate(tables):
             print("type table.data:",type(table.data))
-            print("len vars:",len(vars(tables[i].data[0])))
-            if len(tables[i].data) > 0 and len(vars(tables[i].data[0]))>0:
+
+            if len(table.data) > 0 and len(vars(table.data[0]))>0:
+                print("len vars:",len(vars(table.data[0])))
                 print("len of data:",len(table.data))
                 tabRef = ttk.Frame(self.tabControl)
                 tabRef.table = table
