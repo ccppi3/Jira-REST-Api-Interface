@@ -132,11 +132,11 @@ def getRectsInRange(page,border,debug=False):
             if border.check(rect.x0,rect.y0):
                 if debug:
                     log("RectInRange:")
-                    log_json(strocke)
+                    #log_json(strocke)
                 yield rect
 
 
-def getTextInRange(page,border,debug=True):
+def getTextInRange(page,border,debug=False):
     data_text = page.get_text("json",sort=True)
 
     text_parsed = json.loads(data_text)
@@ -158,7 +158,7 @@ def getTextInRange(page,border,debug=True):
                     if debug:
                         log("----",text,"----")
                         log("%%%%",font,"%%%%")
-                        log_json(line)
+                        #log_json(line)
                     #log("text:",text)
                     #log("rect:",rectBbox)
                     yield text,rectBbox,font,size
