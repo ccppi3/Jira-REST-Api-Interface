@@ -1,0 +1,52 @@
+detectTableRows
+    bx              beginx adjustment to the left of the row
+    ty              generic tolerance in y direction
+    tx              generic tolerance in x direction
+    borderT         generic Border tolerance in all direction
+    nextConlineHT   horizontal tolerance for line detection on (nextconnectedLine)
+
+getHeader
+    thresold        thresold for minimum size difference of width of fields to detect
+    
+
+cutTextOverRect
+    size                font size to asume
+    oversizeThresold    thresold when the text is assumed biggger than the field it contains.
+                        used for splitting text up
+
+getFieldsInRange
+    borderWidth     thresold to asume its a line and not a rect
+
+nextLineCross
+    borderWidth     thresold to asume its a line and not a rect
+    t               generic thresold for look ahead and back methods "how wide out of field we look"
+    beginThreshold  look back [beginThreshold]Pixels from start fo detection
+
+nextConnectedLine
+    borderWidth     thresold to asume its a line and not a rect
+    t               generic thresold for look ahead and back methods "how wide out of field we look"
+    
+endHorizontalLine
+    borderWidth     thresold to asume its a line and not a rect
+
+isLine
+    thresold        thresold on when it is detected as a line (in Pixels)
+
+searchTableEnd
+   t                    look around / tolerance to detect slightli misplaced elements (in Pixels)
+    borderT             generic tolerance for border detection
+    thresholdIsLongLine from this value on we assume its a long table line 
+
+searchTableDown
+    t1              generic lookaround
+    borderWidth     generic thresold for border detection
+    magicY          move [magicY] times more down in Y direction
+    endAppendY      add [endAppendY] pixels to the table in the y direction at the end
+
+searchContentFromRowName
+    tx0             look before [tx0] pixels
+    ty0             look forward [ty0] pixels
+    tx1             look forwared [ty1] pixels
+    borderWidth     thresold to asume its a line and not a rect
+    
+    
