@@ -197,10 +197,10 @@ def _runPdfParser(newFileList): #helper function witch wraps all the parsing cal
         for pageNr in range(countPage):
             if pageNr == 0:
                 company = "Allpower"
-            elif pageNr == 1:
-                company = "Santis"
+            if pageNr == 1:
+                company = "Allpower"
             else:
-                company = "Unknown"
+                company = "Santis"
 
             log("Parse page ",pageNr," of file ",file,level=err.NONE)
             msg = pathlib.PurePath(str(file.path)).parts # | regex and

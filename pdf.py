@@ -473,7 +473,7 @@ def searchTableEnd(page,table_full): #search the table border by moving to the l
 def searchTableDown(page,table_full):
     biggesty = 0
     smallesty = None
-    t1 = 15
+    t1 = 15 # How much lookahead for table end? better to much than to little
     table = table_full.rec
     border = Border(table.x0-t1,table.y0-t1,table.x0+t1,table.y0+t1*5,3)
     for rect in getRectsInRange(page,border):
