@@ -113,10 +113,14 @@ def transformPdfToPymupdf(page,x,y,w,h):
     return pymupdf.Rect(x,y,w,h) * ~page.transformation_matrix
 
 def transformRect(page,rect):
-    if rect:
-        return rect * ~page.transformation_matrix
-    else:
+    try:
+        rect
+    except:
+        log("no rec to tranform")
         return False
+    else:
+        return rect * ~page.transformation_matrix
+
 def transformYPoint(page,y):
     return page.mediabox[3]-y
 
@@ -249,11 +253,18 @@ def searchForTable(page,tableNames,pageNr,fileName):
 
             #search with other algorythm
     #remove double tables where if first point match remove the one witch seems to be a line
-    for ai,a in enumerate(tables):
-        for i in range(ai+1,len(tables)):
-            if abs(a.rec.x0 - tables[i].rec.x0) < 1 and abs(a.rec.y0 - tables[i].rec.y0) < 1:
-                log("\tpop table:", tables[i], "in favor of: ",a)
-                tables.pop(i)
+   # toBeRemoved = []
+   # if len(tables)>1:
+   #     log("len tables: ",len(tables))
+   #     for ai,a in enumerate(tables):
+   #         for i in range(ai+1,len(tables)):
+   #             log("i: ",i)
+   #             if abs(a.rec.x0 - tables[i].rec.x0) < 1 and abs(a.rec.y0 - tables[i].rec.y0) < 1:
+   #                 log("\tpop table:", tables[i], "in favor of: ",a)
+   #                 toBeRemoved.append(i)
+   #     toBeRemoved.sort(reverse=True)
+   #     for i,e in enumerate(toBeRemoved):
+   #         tables.pop(i)
     
    # tbl = page.find_tables()
    # print("tables(find_tables():",tbl)
@@ -264,7 +275,7 @@ def searchForTable(page,tableNames,pageNr,fileName):
 
     return tables
 
-def detectTableRows(page,table,tx=2,ty=4,bx=10,borderT=3,nextConLineHT=10):
+def detectTableRows(page,table,tx=2,ty=6,bx=20,borderT=3,nextConLineHT=10):
     rowNameList=[]
     fields = []
     rects = []
@@ -455,8 +466,79 @@ def isLine(rect,thresold = 3):
     elif vertical == True:
         return "vertical"
 
+def getTableLine(page,xPosTabelLine,yPosStartlineDown,borderWidth=5,jointTolerance=0.5):
+    leftLimit = xPosTabelLine-borderWidth
+    rightLimit = xPosTabelLine+borderWidth
 
-def searchTableEnd(page,table_full,t=10,borderT=3,thresholdIsLongLine=20): #search the table border by moving to the left
+    def _filter(drawings,page,leftLimit,rightLimit,borderWidth,yPosStartlineDown):
+        listVerticalRects = []
+        for drawing in drawings:
+            rect:pymupdf.Rect = drawing['items'][0][1]
+            if type(rect) == pymupdf.Rect:
+                if(rect.x1-rect.x0)<borderWidth:
+                    if(rect.y1-rect.y0)>3:
+                        if(rect.x0 <rightLimit and rect.x0 > leftLimit):
+                            if(rect.y1 < yPosStartlineDown):
+                                #print("\t----->BigBox: ",drawing)
+                                print("keys:",drawing.keys())
+                                print("seqno:",drawing['width'])
+                                print("\trec:",transformRect(page,rect))
+                                listVerticalRects.append(rect)
+        return listVerticalRects
+
+    def _sort(rects:list[pymupdf.Rect]):
+        for n in range(len(rects)-1,0,-1):
+            for i in range(0,n):
+                if(rects[i].y1 > rects[i+1].y1):
+                    rects[i],rects[i+1] = rects[i+1],rects[i]
+        return rects
+    def getConnected(rects,jointTolerance,skip=0):
+        _list = []
+        try:
+            _list.append(rects[0])
+        except:
+            pass
+        for n in range(skip,len(rects)-1):
+            if( abs(rects[n+1].y0 - rects[n].y1) <= jointTolerance):
+                print("sub:",rects[n].y0 - rects[n+1].y1)
+                _list.append(rects[n+1])
+            else:
+                break
+        return _list
+
+    drawings = page.get_drawings()
+    verticalRects = _filter(drawings,page,leftLimit,rightLimit,borderWidth,yPosStartlineDown)
+
+    verticalRects = _sort(verticalRects)
+
+    for rect in verticalRects:
+        print("\t vRect:",rect)
+
+    verticalRects = getConnected(verticalRects,jointTolerance,skip=2)
+    print("connected lines:")
+    for rect in verticalRects:
+        print("\t  connected vRect:",transformRect(page,rect))
+    
+
+
+
+
+
+
+
+def printHorizontalLine(page):
+    drawings = page.get_drawings()
+    for drawing in drawings:
+        rect:pymupdf.Rect = drawing['items'][0][1]
+        if type(rect) == pymupdf.Rect:
+            print("rect:",rect)
+            if(rect.x1-rect.x0)>100:
+                if(rect.y1-rect.y0)<5:
+                    if rect.x0<100:
+                        print("BigBox: ",drawing)
+
+
+def searchTableEnd(page,table_full,t=10,borderT=5,thresholdIsLongLine=20): #search the table border by moving to the left
     table = table_full.rec
     border = Border(table.x0-t,table.y0-t,table.x0+t,table.y0+t,borderT)
     for rect in getRectsInRange(page,border):
@@ -465,11 +547,11 @@ def searchTableEnd(page,table_full,t=10,borderT=3,thresholdIsLongLine=20): #sear
             return rect
     return False
 
-def searchTableDown(page,table_full,t1=15,borderWidth=3,magicY=5,endAppendY=10):# How much lookahead for table end? better to much than to little
+def searchTableDown(page,table_full,t1=20,borderWidth=5,magicY=5,endAppendY=10,magicX=3):# How much lookahead for table end? better to much than to little
     biggesty = 0
     smallesty = None
     table = table_full.rec
-    border = Border(table.x0-t1,table.y0-t1,table.x0+t1,table.y0+t1*magicY,borderWidth)
+    border = Border(table.x0-t1,table.y0-t1,table.x0+t1*magicX,table.y0+t1*magicY,borderWidth)
     for rect in getRectsInRange(page,border):
         if abs(rect.x1 - rect.x0) < borderWidth: #and abs(rect.y0 - rect.y1) > 20: #is it a line? do not filter short lines
             #log("{searchTableDown}Potential border of table:",transformRect(page,rect))
@@ -481,12 +563,17 @@ def searchTableDown(page,table_full,t1=15,borderWidth=3,magicY=5,endAppendY=10):
             if(rect.y0 < smallesty):
                 smallesty = rect.y0
              #   log("\tsmallest[mypfcoordinate]:",smallesty)
-    if rect:
-        final_rect = rect
-        final_rect.y1 = biggesty + endAppendY
-        final_rect.y0 = smallesty
-        log("\ttable border calculated:",transformRect(page,final_rect))
-        return final_rect
+    try:
+        rect
+    except:
+        log("no rect found")
+    else:
+        if rect:
+            final_rect = rect
+            final_rect.y1 = biggesty + endAppendY
+            final_rect.y0 = smallesty
+            log("\ttable border calculated:",transformRect(page,final_rect))
+            return final_rect
     return False
 
 class Tbl:
@@ -543,7 +630,6 @@ class Tables:
         table = self.selected_table
         table.rowNameList = rowNameList
     def parseTable(self):
-        rowCache = []
         table = self.selected_table
         table.entries = []
         table.state = self.State()
@@ -559,6 +645,7 @@ class Tables:
                     table.entries.append(Entry())
                 log("{PARSE TABLE} entry: ",table.entries[index],"_")
                 setattr(table.entries[index],rowName,content)
+        getTableLine(page,30,1000)
 
     def getObjectsFromTable(self):
         table = self.selected_table
@@ -566,7 +653,6 @@ class Tables:
             yield x
 
     def searchContentFromRowName(self,page,rowName,table_border,tx0=4,ty0=2,tx1=1,borderWidth=3):
-        break_loop = False
         listA = []          #list from algo A
         listB = []          #list from algo B
         listC = []          #combined list

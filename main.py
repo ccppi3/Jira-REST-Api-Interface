@@ -49,7 +49,6 @@ class TableData:
         return evDate
 
     def dump(self):
-        string = ""
         for entry in self.data:
             for ob in _dir(entry):
                 print(ob,"/",getattr(entry,ob))
@@ -153,13 +152,15 @@ class asyncParser():
 
     def thread(self,filelist,tables,appMaster=None,label=None,bar=None):
         def createBar():
-            if appMaster.master:
-                statusBar = ttk.Progressbar(appMaster.master, mode="indeterminate")
-                statusBar.pack()
-                statusBar.start()
-                return statusBar
-            else:
-                log("No masterwindow specified skip progressbar")
+            if appMaster:
+                if appMaster.master:
+                    statusBar = ttk.Progressbar(appMaster.master, mode="indeterminate")
+                    statusBar.pack()
+                    statusBar.start()
+                    return statusBar
+                else:
+                    log("No masterwindow specified skip progressbar")
+
         def destroyBar(statusBar):
             try:
                 statusBar.stop()
@@ -207,7 +208,7 @@ def _runPdfParser(newFileList): #helper function witch wraps all the parsing cal
             print(msg)
             yield "Parse:" + msg[len(msg)-1] + " Page " + str(pageNr)
             tables.selectPage(pageNr)
-            listTable = tables.setTableNames(["Tabelle 1","NEUEINTRITT","Arbeitsplatzwechsel","NEUEINTRITTE"])
+            listTable = tables.setTableNames(["Tabelle 1","NEUEINTRITT","Arbeitsplatzwechsel","WIEDEREINTRITT","NEUEINTRITTE"])
             for i,table in enumerate(listTable):
                 tables.selectTableByObj(table)
                 rowList = pdf.detectTableRows(tables.pages.selected,table)
@@ -240,7 +241,13 @@ def tablesToTicket(tableDataList,check=True): #tackes the tabledata and creates 
            ticketTable = ticket.Ticket(table,tempObjs,filename,table.company,"neueintritt")
         elif "neueintritt" in str(table.name).lower():
             ticketTable = ticket.Ticket(table,tempObjs,filename,table.company,"neueintritte")
-        ticketTable.createTicket(check=False)
+
+        try:
+            ticketTable
+        except:
+            log("no ticketTable",err.INFO)
+        else:
+            ticketTable.createTicket(check=False)
 
 def tableToTicket(table,check=True):
         log("table: ",table,level=err.INFO)
@@ -258,8 +265,13 @@ def tableToTicket(table,check=True):
             ticketTable = ticket.Ticket(table,tempObjs,filename,table.company,"neueintritt")
         elif "neueintritt" in str(table.name).lower():
             ticketTable = ticket.Ticket(table,tempObjs,filename,table.company,"neueintritte")
-        for status in ticketTable.createTicket(check=False):
-            yield status
+        try:
+            ticketTable
+        except:
+            log("no ticketTable",err.INFO)
+        else:
+            for status in ticketTable.createTicket(check=False):
+                yield status
     
 
 def _removeDoubles(newFileList):
