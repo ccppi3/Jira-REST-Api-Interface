@@ -3,6 +3,7 @@ import pdf
 tables = pdf.Tables("tmp.pdf")
 tables.selectPage(0)
 listTable = tables.setTableNames(["Tabelle 1","NEUEINTRITT","Arbeitsplatzwechsel","NEUEINTRITTE","Wiedereintritt"])
+#listTable = tables.setTableNames(["Arbeitsplatzwechsel"])
 
 for table in listTable:
     print("detected rows:",pdf.detectTableRows(tables.pages.selected,table))
