@@ -145,7 +145,7 @@ def getRectsInRange(page,border,debug=False):
                 yield rect
 
 
-def getTextInRange(page,border,debug=False,t=1):
+def getTextInRange(page,border,debug=False,t=2):
     data_text = page.get_text("json",sort=True)
 
     text_parsed = json.loads(data_text)
@@ -160,7 +160,10 @@ def getTextInRange(page,border,debug=False,t=1):
             for line in block["lines"]:
                 text = line["spans"][0]["text"]
                 origin = line["spans"][0]["origin"]
-
+                if text=="Vorname" and origin[0]:
+                    log("text",text)
+                    log("origin",origin)
+                    print("border:",border)
                 rectBbox = pymupdf.Rect(origin[0],origin[1],0,0)
                 if border.check(rectBbox.x0+t,rectBbox.y0+t):
                     font=line["spans"][0]["font"]
@@ -291,7 +294,7 @@ def searchForTable(page,tableNames,pageNr,fileName):
 
     return tables
 
-def detectTableRows(page,table,tx=2,ty=6,bx=20,borderT=3,nextConLineHT=10):
+def detectTableRows(page,table,tx=5,ty=6,bx=20,borderT=3,nextConLineHT=10):
     def probeRect(rect):
         def err(n):
             log(n, "is NULL",err=err.DEBUG)
@@ -328,7 +331,6 @@ def detectTableRows(page,table,tx=2,ty=6,bx=20,borderT=3,nextConLineHT=10):
                 probeRect(table.rec)
                 probeRect(pymupdf.Rect(None,None,None,None))
 
-
                 xLineTable = pymupdf.Rect(rect.x0-tx,rect.y0,table.rec.x1 *2,rect.y0)
                 temp = xLineTable
                 while temp != False:
@@ -338,7 +340,7 @@ def detectTableRows(page,table,tx=2,ty=6,bx=20,borderT=3,nextConLineHT=10):
                         xLineTable = temp
                     log("xLineTable2:",xLineTable)
                 xLineTable.x0 = rect.x0-tx
-            log("xLineTable:",transformRect(page,xLineTable))
+            log("\txLineTable:",transformRect(page,xLineTable))
             #borderTitle = Border(xLineTable.x0,xLineTable.y0,xLineTable.x1,xLineTable.y1+10,5)
             rectBottomTable = pymupdf.Rect(xLineTable.x0,xLineTable.y1,xLineTable.x1,table.rec.y1)
             xLineBottomTable = nextLineCross(page,rectBottomTable,"vertical")
@@ -356,7 +358,7 @@ def detectTableRows(page,table,tx=2,ty=6,bx=20,borderT=3,nextConLineHT=10):
                 log("fieldrow:",transformRect(page,fieldRow))
                 fullText = ""
                 i=0
-                for text,rect,font,size in getTextInRange(page,RectToBorder(fieldRow),debug=True):
+                for text,rect,font,size in getTextInRange(page,RectToBorder(fieldRow),t=5,debug=True):
                     log("[fieldRow]Text: ",text)
                     text = text.strip()
                     if text:
@@ -382,6 +384,7 @@ def getHeader(page,fields,rectTable,thresold=10):
             sizeTable = rectSize(rectTable,direction='x')
             sizeField = rectSize(field,direction='x')
             size = sizeTable - sizeField
+            log("sizeTable:",sizeTable,"sizeField:",sizeField)
             fullText = ""
             text= ""
             for text,rect,font,size in getTextInRange(page,RectToBorder(field),debug=False):
@@ -686,12 +689,14 @@ class Tables:
         for init,rowName in enumerate(self.selected_table.rowNameList):
             if init == 0:
                 table.entries.append(Entry())
-            _list = self.searchContentFromRowName(page,rowName,table.border)
+            _list,realName = self.searchContentFromRowName(page,rowName,table.border)
 
             for index,content in enumerate(_list):
                 if(index > len(table.entries)-1):
                     table.entries.append(Entry())
                 log("{PARSE TABLE} entry: ",table.entries[index],"_")
+                if(len(rowName) < len(realName)):
+                    rowName = realName.replace("\n","-").replace(" ","")
                 setattr(table.entries[index],rowName,content)
 
 
@@ -723,7 +728,8 @@ class Tables:
             if table_border.check(outerRec.x0,outerRec.y0): # is the row inside the border/table?
                 real_name = page.get_textbox(outerRec).strip()
                 log(real_name,";",rowName,";",transformRect(page,outerRec))
-                if real_name == rowName:
+
+                if real_name == rowName or (real_name in rowName) or (rowName in real_name) :
                     #posTableLine = checkBorderDown(page,recName)
                     borderContent = Border(outerRec.x0,outerRec.y1,outerRec.x1,table_border.y2,1)
                     log("tableborder.y2:",transformYPoint(page,table_border.y2))
@@ -761,7 +767,7 @@ class Tables:
                     log(listB,level=err.ULTRA)
                     log(listC,level=err.ULTRA)
 
-                    return listC
+                    return listC, real_name
                 else:
                     log("no match")
             else:
