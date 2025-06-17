@@ -238,6 +238,7 @@ class App:
             confirmWrapper = partial(self.makeSure,tab, "create")
             deleteWrapper = partial(self.makeSure, tab, "delete")
             deleteColumnWrapper = partial(self.deleteColumn, tab)
+            
 
             # Buttons
             tab.confirmButton = ttk.Button(tab, text="Create Ticket", width=15, command=confirmWrapper)
@@ -245,6 +246,7 @@ class App:
             tab.deleteButton = ttk.Button(tab, text="Delete Ticket", width=15, command=deleteWrapper)
             tab.deleteButton.grid(row=3, column=1, columnspan=2, pady=5, padx=5, sticky="E")
             tab.deleteColumnButton = ttk.Button(tab,text = "Delete Selected Column",width=15, command=deleteColumnWrapper)
+            tab.deleteColumnButton.grid(row=3,column=3,columnspan=2, padx=5,pady=5)
             self.createTable(tab,tab.table)
     
     def deleteColumn(self,tab):
@@ -450,14 +452,19 @@ class App:
         # Insert table data into table
 
         print("templist:",listOfList)
+
 class TreeviewC(ttk.Treeview):
     def __init__(self,master=None,**kw):
         super().__init__(master,**kw)
+        self.selected : ttk._TreeviewItemDict
         self.bind("<Button-1>",lambda e: self.selectItem(e))
     def selectItem(self,e):
         item = self.focus()
         print("selected Item",item,"content:",self.item(item))
         print("event:",e)
+        self.selected = self.item(item)
+    def getSelectedItem(self):
+        return self.selected
 
 def getResourcePath(relPath):
     try:
