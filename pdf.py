@@ -106,8 +106,8 @@ class Border:
         self.y2 = y2
         self.tolerance = tolerance
     def check(self,x,y):
-        if x > (self.x - self.tolerance) and x < (self.x2) and \
-                y > (self.y - self.tolerance) and y < (self.y2+3):
+        if x > (self.x - self.tolerance) and x < (self.x2+self.tolerance) and \
+                y > (self.y - self.tolerance) and y < (self.y2+self.tolerance):
                 return True
         return False
     def __str__(self):
@@ -160,10 +160,10 @@ def getTextInRange(page,border,debug=False,t=2):
             for line in block["lines"]:
                 text = line["spans"][0]["text"]
                 origin = line["spans"][0]["origin"]
-                if text=="Vorname" and origin[0]:
-                    log("text",text)
-                    log("origin",origin)
-                    print("border:",border)
+                #if text=="Vorname" and origin[0]:
+                    #log("text",text)
+                    #log("origin",origin)
+                    #print("border:",border)
                 rectBbox = pymupdf.Rect(origin[0],origin[1],0,0)
                 if border.check(rectBbox.x0+t,rectBbox.y0+t):
                     font=line["spans"][0]["font"]
@@ -235,6 +235,31 @@ def getEndOfTables(page,fieldName):
     return endy
 
 def searchForTable(page,tableNames,pageNr,fileName):
+    def _sort(rects:list[pymupdf.Rect]):
+        for n in range(len(rects)-1,0,-1):
+            for i in range(0,n):
+                if rectSize(rects[i],"x") < rectSize(rects[i+1],"x"):
+                    rects[i],rects[i+1] = rects[i+1],rects[i]
+        return rects
+    def checkIsInside(outer:pymupdf.Rect,inner:pymupdf.Rect):
+        if (outer.x0 < inner.x0) and (outer.x1 > inner.x1):
+            if (outer.y0 < inner.y0) and (outer.y1 > inner.y1):
+                return True
+        return False
+    def searchOuter(page,border,innerRect):
+        for outerRect in getRectsInRange(page,border):
+            if checkIsInside(outerRect,innerRect):
+                return outerRect
+        return innerRect
+    def getBiggest(page,recTable,yRecSearchPoint):
+        _list=[]
+        for rec in getRectsInRange(page,Border(recTable.x0,recTable.y0,recTable.x0,page.bound().y1,30)):
+            if rectSize(rec,"x") > 10:
+                if round(rec.y1) - yRecSearchPoint  < 5:
+                    print("rec:",transformRect(page,rec))
+                    _list.append(rec)
+        return _list
+
     tables = []
     for name in tableNames:
         for rec in page.search_for(name):
@@ -247,29 +272,43 @@ def searchForTable(page,tableNames,pageNr,fileName):
             if y != False:
                 rec.y1 = y
             tables.append(Tbl(rec,name,fileName,pageNr))
-            
-    
 
     for x in tables:
         log("{searchForTable}tables at ",x.name,":",transformRect(page,x.rec))
     log("\tcount tables:",len(tables))
     for i,table in enumerate(tables):
         log("{searchForTable}Current tableName:",table.name)
-        rec =  searchTableEnd(page,table) 
+        log("\t",table.name,"No table end found use algo2")
+        rec = searchTableDown(page,table)
         if rec:
             table.rec.y0 = rec.y0
             table.rec.y1 = rec.y1
+            log("\tres algo2:")
+            print("\t\trec:",transformRect(page,table.rec))
         else:
-            log("\t",table.name,"No table end found use algo2")
-            rec = searchTableDown(page,table)
-            if rec:
-                table.rec.y0 = rec.y0
-                table.rec.y1 = rec.y1
-                log("\tres algo2:")
-                print("\t\trec:",transformRect(page,table.rec))
-            else:
-                log("\t\tno table found, giving up")
+            log("\t\tno table found, giving up")
+        
+        #just implement choose the biggest one near y point
 
+        for line in getHorizontalLines(page,50,5):
+            log("TableLine:",transformRect(page,line))
+            if abs(line.y0 - table.rec.y0) < 5:
+                table.rec.x0 = line.x0
+                table.rec.x1 = line.x1
+            for extensionRec in getRectsInRange(page,Border(table.rec.x0,table.rec.y0,page.bound().x1,page.bound().y1,3)):
+                if abs(extensionRec.y0-line.y0) < 3:
+                    if extensionRec.x1 > table.rec.x1:
+                        if abs(extensionRec.x1-table.rec.x1) < 5:
+                            log("extensionRec: ",extensionRec)
+                            table.rec.x1 = extensionRec.x1
+        biggest = getBiggest(page,table.rec,table.rec.y0)
+        biggest = _sort(biggest)
+        for line in biggest:
+            print("sorted:",line)
+        if biggest:
+            table.rec.x1 = biggest[0].x1
+        log("def table:",transformRect(page,table.rec))
+        input()
             #search with other algorythm
     #remove double tables where if first point match remove the one witch seems to be a line
    # toBeRemoved = []
@@ -293,6 +332,7 @@ def searchForTable(page,tableNames,pageNr,fileName):
    # input()
 
     return tables
+
 
 def detectTableRows(page,table,tx=5,ty=6,bx=20,borderT=3,nextConLineHT=10):
     def probeRect(rect):
@@ -319,55 +359,35 @@ def detectTableRows(page,table,tx=5,ty=6,bx=20,borderT=3,nextConLineHT=10):
 
     log("Search for vertical line, count rects:",len(rects))
     for rect in getRectsInRange(page,border,debug=False):
-        log("[detectTableRows]RectsinRange:",transformRect(page,rect))
         if isLine(rect) == "vertical":
-            rectStartTable = pymupdf.Rect(rect.x0-tx,rect.y0-ty,rect.x0,rect.y0+ty+1)
-            log("rectStartTable:",transformRect(page,rectStartTable))
-            xLineTable = nextLineCross(page,rectStartTable,"vertical")
-            log("table size:",table.rec.x1)
-            #edge case handling fine tuned different settings
-            if xLineTable == False:
-                probeRect(rect)
-                probeRect(table.rec)
-                probeRect(pymupdf.Rect(None,None,None,None))
+            hLines = getAllTableHLine(page,table.rec.x0,table.rec.y0,skip=0)
+            for hLine in hLines:
+                log("hLine:",transformRect(page,hLine))
+            if hLines != False:
+                hLineHeader = hLines[1]
+                headerRec = pymupdf.Rect(hLineHeader.x0,hLineHeader.y0,table.rec.x1,hLineHeader.y1)
+                log("HeaderRec:",transformRect(page,headerRec))
+                for field in getFieldsInRange(page,headerRec):
+                    log(transformRect(page,field))
+                    fields.append(field)
 
-                xLineTable = pymupdf.Rect(rect.x0-tx,rect.y0,table.rec.x1 *2,rect.y0)
-                temp = xLineTable
-                while temp != False:
-                    temp = nextConnectedLine(page,temp,direction="horizontal",t=nextConLineHT)
-                    log("next connected line")
-                    if temp != False:
-                        xLineTable = temp
-                    log("xLineTable2:",xLineTable)
-                xLineTable.x0 = rect.x0-tx
-            log("\txLineTable:",transformRect(page,xLineTable))
-            #borderTitle = Border(xLineTable.x0,xLineTable.y0,xLineTable.x1,xLineTable.y1+10,5)
-            rectBottomTable = pymupdf.Rect(xLineTable.x0,xLineTable.y1,xLineTable.x1,table.rec.y1)
-            xLineBottomTable = nextLineCross(page,rectBottomTable,"vertical")
-            
-            log("xLBottomTable",transformRect(page,xLineBottomTable))
-
-            for field in getFieldsInRange(\
-                    page,pymupdf.Rect(\
-                    xLineTable.x0, xLineTable.y1, xLineTable.x1,table.rec.y1 \
-                    )):
-                log(transformRect(page,field))
-                fields.append(field)
-
-            for fieldRow in getHeader(page,fields,xLineTable):
-                log("fieldrow:",transformRect(page,fieldRow))
-                fullText = ""
-                i=0
-                for text,rect,font,size in getTextInRange(page,RectToBorder(fieldRow),t=5,debug=True):
-                    log("[fieldRow]Text: ",text)
-                    text = text.strip()
-                    if text:
-                        splitText = cutTextOverRect(page,fieldRow,text,font,size)
-                        if not splitText:
-                            rowNameList.append(text)
-                        else:
-                            for txt in splitText:
-                                rowNameList.append(txt)
+                for fieldRow in getHeader(page,fields,headerRec):
+                    fieldRow = pymupdf.Rect(fieldRow.x0,fieldRow.y0,fieldRow.x1,fieldRow.y1+10)
+                    log("fieldrow:",transformRect(page,fieldRow))
+                    fullText = ""
+                    i=0
+                    for text,rect,font,size in getTextInRange(page,RectToBorder(fieldRow),t=5,debug=False):
+                        log("[fieldRow]Text: ",text)
+                        text = text.strip()
+                        if text:
+                            splitText = cutTextOverRect(page,fieldRow,text,font,size)
+                            if not splitText:
+                                rowNameList.append(text)
+                            else:
+                                for txt in splitText:
+                                    rowNameList.append(txt)
+            else:
+                log("No hline header found",level=err.ERROR)
         else:
             log("/tline not vertical")
             print("/trec:",transformRect(page,rect))
@@ -375,9 +395,10 @@ def detectTableRows(page,table,tx=5,ty=6,bx=20,borderT=3,nextConLineHT=10):
 
     return rowNameList
 
-def getHeader(page,fields,rectTable,thresold=10):
+def getHeader(page,fields,rectTable,thresold=6):
     lowestY = None
     filteredFields = []
+    log("rectTable:",rectTable)
     for field in fields:
         log("{getHeader} Fields:", field)
         if abs(rectSize(rectTable,direction='x') - rectSize(field,direction='x')) > thresold:
@@ -405,8 +426,8 @@ def getHeader(page,fields,rectTable,thresold=10):
 
         fieldsRow = []
         for field in filteredFields:
-            if round(field.y0,1) == round(lowestY,1):#is it in a row?
-                fieldsRow.append(field)
+            #if round(field.y0,1) == round(lowestY,1):#is it in a row?
+            fieldsRow.append(field)
         return fieldsRow
     else:
         return []
@@ -435,6 +456,7 @@ def rectSize(rect,direction="x"):
         return abs(rect.x1 - rect.x0)
     if direction=='y':
         return abs(rect.y1 - rect.y0)
+    return 0
 
 def getFieldsInRange(page,rect,borderWidth=3):
     t=2
@@ -453,7 +475,7 @@ def nextLineCross(page,rect,direction,borderWidth=3,t=2,beginThreshold=10):
         else:
             return False
     if direction=="horizontal":
-        border = Border(rect.x1-t,rect.y0-t,rect.x1+t,rect.y0+borderWidth,1)
+        border = Border(rect.x0+t,rect.y0-t,rect.x1+t+borderWidth*5,rect.y0+borderWidth,1)
         for rectNew in getRectsInRange(page,border):
             if isLine(rectNew) == "vertical":
                 return rectNew
@@ -522,9 +544,9 @@ def getTableLine(page,xPosTabelLine,yPosStartlineDown,borderWidth=5,jointToleran
                         if(rect.x0 <rightLimit and rect.x0 > leftLimit):
                             if(rect.y0 > yPosStartlineDown):
                                 #print("\t----->BigBox: ",drawing)
-                                print("keys:",drawing.keys())
-                                print("seqno:",drawing['width'])
-                                print("\trec:",transformRect(page,rect))
+                                #print("keys:",drawing.keys())
+                                #print("seqno:",drawing['width'])
+                                #print("\trec:",transformRect(page,rect))
                                 listVerticalRects.append(rect)
         return listVerticalRects
 
@@ -576,11 +598,20 @@ def printHorizontalLine(page):
     for drawing in drawings:
         rect:pymupdf.Rect = drawing['items'][0][1]
         if type(rect) == pymupdf.Rect:
-            print("rect:",rect)
             if(rect.x1-rect.x0)>100:
                 if(rect.y1-rect.y0)<5:
                     if rect.x0<100:
                         print("BigBox: ",drawing)
+
+def getHorizontalLines(page,minLen=100,lineThreshold=5):
+    drawings = page.get_drawings()
+    for drawing in drawings:
+        rect:pymupdf.Rect = drawing['items'][0][1]
+        if type(rect) == pymupdf.Rect:
+            if abs(rect.x1-rect.x0)>minLen:
+                if abs(rect.y1-rect.y0)<lineThreshold:
+                    if rect.x0<minLen:
+                        yield rect
 
 
 def searchTableEnd(page,table_full,t=10,borderT=5,thresholdIsLongLine=20): #search the table border by moving to the left
@@ -592,7 +623,7 @@ def searchTableEnd(page,table_full,t=10,borderT=5,thresholdIsLongLine=20): #sear
             return rect
     return False
 
-def searchTableDown(page,table_full,t1=20,borderWidth=2,magicY=1,endAppendY=10,magicX=3,borderT=5):# How much lookahead for table end? better to much than to little
+def searchTableDown(page,table_full,t1=10,borderWidth=2,magicY=1,endAppendY=10,magicX=3,borderT=5):# How much lookahead for table end? better to much than to little
     log("{SearchTableDown}")
     biggesty = 0
     smallesty = None
@@ -681,11 +712,11 @@ class Tables:
         table.state = self.State()
         page = self.pages.selected
         table.rec.y1 = getTableLine(page,table.rec.x0,table.rec.y0,skip=1)
-        table.border = Border(table.rec.x0,table.rec.y0,MAX_BORDER_WIDTH,table.rec.y1,5)
+        table.border = Border(table.rec.x0,table.rec.y0,table.rec.x1,table.rec.y1,5)
 
         print("table:",transformRect(page,table.rec))
         print("table:",table.rec)
-
+        print("rowNameList:",self.selected_table.rowNameList)
         for init,rowName in enumerate(self.selected_table.rowNameList):
             if init == 0:
                 table.entries.append(Entry())
@@ -773,4 +804,58 @@ class Tables:
             else:
                 log("rec(",rowName,") not inside table border")
                 log("table_border:",transformPdfToPymupdf(page,table_border.x,table_border.y,table_border.x2,table_border.y2))
-        return []
+        return [],""
+
+def getAllTableHLine(page,xPosTabelLine,yPosStartlineDown,borderWidth=5,jointTolerance=2,skip=0):
+    leftLimit = xPosTabelLine-borderWidth
+    rightLimit = xPosTabelLine+borderWidth
+
+    def _filter(drawings,page,leftLimit,rightLimit,borderWidth,yPosStartlineDown):
+        listVerticalRects = []
+        for drawing in drawings:
+            rect:pymupdf.Rect = drawing['items'][0][1]
+            if type(rect) == pymupdf.Rect:
+                if(rect.x1-rect.x0)<borderWidth:
+                    if(rect.y1-rect.y0)>jointTolerance:
+                        if(rect.x0 <rightLimit and rect.x0 > leftLimit):
+                            if(rect.y0 > yPosStartlineDown):
+                                listVerticalRects.append(rect)
+        return listVerticalRects
+
+    def _sort(rects:list[pymupdf.Rect]):
+        for n in range(len(rects)-1,0,-1):
+            for i in range(0,n):
+                if(rects[i].y1 > rects[i+1].y1):
+                    rects[i],rects[i+1] = rects[i+1],rects[i]
+        return rects
+    def getConnected(rects,jointTolerance,skip=0):
+        _list = []
+        try:
+            _list.append(rects[0])
+        except:
+            pass
+        for n in range(skip,len(rects)-1):
+            if( abs(rects[n+1].y0 - rects[n].y1) <= jointTolerance):
+                print("sub:",rects[n].y0 - rects[n+1].y1)
+                _list.append(rects[n+1])
+            else:
+                break
+        return _list
+
+    drawings = page.get_drawings()
+    verticalRects = _filter(drawings,page,leftLimit,rightLimit,borderWidth,yPosStartlineDown)
+
+    verticalRects = _sort(verticalRects)
+
+    for rect in verticalRects:
+        print("\t vRect:",rect)
+
+    verticalRects = getConnected(verticalRects,jointTolerance,skip=skip)
+    print("connected lines:")
+    for rect in verticalRects:
+        print("\t  connected vRect:",transformRect(page,rect))
+    
+    if verticalRects:
+        return verticalRects
+    else:
+        return False
