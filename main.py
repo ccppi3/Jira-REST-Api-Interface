@@ -48,10 +48,13 @@ class TableData:
             evDate = '.'.join(dotList)
         return evDate
 
+    def delete(self,index):
+        self.data.pop(index)
+
     def dump(self):
-        for entry in self.data:
+        for i,entry in enumerate(self.data):
             for ob in _dir(entry):
-                print(ob,"/",getattr(entry,ob))
+                print(i,": ",ob," / ",getattr(entry,ob))
 
 
 

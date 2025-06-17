@@ -26,7 +26,6 @@ import utils.fileio as fileio
 import tkinterdnd2
 import utils.browser as browser
 
-
 # Inizialize COM-Interface
 pythoncom.CoInitialize()
 
@@ -237,16 +236,15 @@ class App:
             self.tabControl.add(tab, text=str(tab.table.name).capitalize() + " \n " + str(tab.table.pdfNameDate))
             confirmWrapper = partial(self.makeSure,tab, "create")
             deleteWrapper = partial(self.makeSure, tab, "delete")
-            deleteColumnWrapper = partial(self.deleteColumn, tab)
             
 
             # Buttons
             tab.confirmButton = ttk.Button(tab, text="Create Ticket", width=15, command=confirmWrapper)
             tab.confirmButton.grid(row=3, column=0, columnspan=2, pady=5, padx=5, sticky="W")
             tab.deleteButton = ttk.Button(tab, text="Delete Ticket", width=15, command=deleteWrapper)
-            tab.deleteButton.grid(row=3, column=1, columnspan=2, pady=5, padx=5, sticky="E")
-            tab.deleteColumnButton = ttk.Button(tab,text = "Delete Selected Column",width=15, command=deleteColumnWrapper)
-            tab.deleteColumnButton.grid(row=3,column=3,columnspan=2, padx=5,pady=5)
+            tab.deleteButton.grid(row=3, column=2, columnspan=2, pady=5, padx=5, sticky="E")
+            tab.deleteColumnButton = ttk.Button(tab,text = "Delete Row",width=15)
+            tab.deleteColumnButton.grid(row=3,column=1,columnspan=1, padx=5,pady=5,sticky="E")
             self.createTable(tab,tab.table)
     
     def deleteColumn(self,tab):
@@ -389,8 +387,8 @@ class App:
         self.makeSureWindow.destroy()
 
     # Function to create the table
-    def createTable(self,tab,tables):
-        objList = tables.data
+    def createTable(self,tab,table):
+        objList = table.data
         listOfList = []
         columns = []
         for item in inspect.getmembers(objList[0]):
@@ -432,18 +430,20 @@ class App:
             listOfList.append(templist)
 
         # Create table
-        tables.employeeTable = TreeviewC(tab, columns=columns, show="headings", height=5)
+        table.employeeTable = TreeviewC(table,master=tab,columns=columns, show="headings", height=5)
         for item in columns:
-            tables.employeeTable.heading(item, text=item)
-            tables.employeeTable.column(item, anchor=tk.CENTER)
+            table.employeeTable.heading(item, text=item)
+            table.employeeTable.column(item, anchor=tk.CENTER)
         for lists in listOfList:
-            tables.employeeTable.insert("", tk.END, values=lists)
+            table.employeeTable.insert("", tk.END, values=lists)
+        removeColWrapper = partial(table.employeeTable.removeSelectedItem, table)
+        tab.deleteColumnButton.configure(command=removeColWrapper)
 
         # Make scrollbar
-        scrollbar = ttk.Scrollbar(tab, orient="vertical", command=tables.employeeTable.yview)
-        tables.employeeTable.configure(yscroll=scrollbar.set)
+        scrollbar = ttk.Scrollbar(tab, orient="vertical", command=table.employeeTable.yview)
+        table.employeeTable.configure(yscroll=scrollbar.set)
         # Place scrollbar and table
-        tables.employeeTable.grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
+        table.employeeTable.grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
         scrollbar.grid(row=2, column=2, sticky="nsew", pady=5)
         # Configure rows and columns to expand them onto whole screen
         tab.grid_rowconfigure(2, weight=1)  # Expand row 2
@@ -454,17 +454,43 @@ class App:
         print("templist:",listOfList)
 
 class TreeviewC(ttk.Treeview):
-    def __init__(self,master=None,**kw):
+    def __init__(self,table,master=None,**kw):
         super().__init__(master,**kw)
-        self.selected : ttk._TreeviewItemDict
-        self.bind("<Button-1>",lambda e: self.selectItem(e))
+        self.selectedValue : ttk._TreeviewItemDict
+        self.selectedItem : str
+        self.bind("<<TreeviewSelect>>",lambda e: self.selectItem(e))
+        self.bind("<Delete>",lambda e: self.removeSelectedItem(table))
+
     def selectItem(self,e):
         item = self.focus()
         print("selected Item",item,"content:",self.item(item))
         print("event:",e)
-        self.selected = self.item(item)
+        self.selectedValue = self.item(item)
+        self.selectedItem = item
+        print("selecteditem",self.selection())
+
     def getSelectedItem(self):
-        return self.selected
+        return self.selectedItem
+
+    def removeItem(self,item):
+        self.delete(item)
+
+    def removeSelectedItem(self,table : "main.TableData"):
+        def getDigit(string : str):
+            number = 0
+            numbers = []
+            for c in string:
+                if c.isdigit():
+                    numbers.append(c)
+                    number = int(''.join(numbers))
+            return number
+
+        item = self.getSelectedItem()
+        self.removeItem(item)
+        log("delete item:",getDigit(item)-1)
+        table.delete(getDigit(item)-1)
+        
+
 
 def getResourcePath(relPath):
     try:
