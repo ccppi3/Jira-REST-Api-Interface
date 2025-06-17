@@ -172,9 +172,9 @@ class App:
         themeState = ThemeState.LIGHT
 
     def showVersion(self):
-        messagebox.showinfo("Version","Build: Version " + deploy.getVersionsExe() + "\n"  \
-                + "Product Name: " + deploy.getVersionsExe(info_str = "ProductName") + "\n" \
-                + "FileVersion: " + deploy.getVersionsExe(info_str = "FileVersion") \
+        messagebox.showinfo("Version","Build: Version " + str(deploy.getVersionsExe()) + "\n"  \
+                + "Product Name: " + str(deploy.getVersionsExe(info_str = "ProductName")) + "\n" \
+                + "FileVersion: " + str(deploy.getVersionsExe(info_str = "FileVersion")) \
                 )
 
         
@@ -237,14 +237,19 @@ class App:
             self.tabControl.add(tab, text=str(tab.table.name).capitalize() + " \n " + str(tab.table.pdfNameDate))
             confirmWrapper = partial(self.makeSure,tab, "create")
             deleteWrapper = partial(self.makeSure, tab, "delete")
+            deleteColumnWrapper = partial(self.deleteColumn, tab)
 
             # Buttons
             tab.confirmButton = ttk.Button(tab, text="Create Ticket", width=15, command=confirmWrapper)
             tab.confirmButton.grid(row=3, column=0, columnspan=2, pady=5, padx=5, sticky="W")
             tab.deleteButton = ttk.Button(tab, text="Delete Ticket", width=15, command=deleteWrapper)
             tab.deleteButton.grid(row=3, column=1, columnspan=2, pady=5, padx=5, sticky="E")
+            tab.deleteColumnButton = ttk.Button(tab,text = "Delete Selected Column",width=15, command=deleteColumnWrapper)
             self.createTable(tab,tab.table)
     
+    def deleteColumn(self,tab):
+        pass
+
     # Handle confirm create button click
     def confirmCreateButtonHandler(self,tab):
         # Close confirm window
@@ -425,7 +430,7 @@ class App:
             listOfList.append(templist)
 
         # Create table
-        tables.employeeTable = ttk.Treeview(tab, columns=columns, show="headings", height=5)
+        tables.employeeTable = TreeviewC(tab, columns=columns, show="headings", height=5)
         for item in columns:
             tables.employeeTable.heading(item, text=item)
             tables.employeeTable.column(item, anchor=tk.CENTER)
@@ -445,6 +450,14 @@ class App:
         # Insert table data into table
 
         print("templist:",listOfList)
+class TreeviewC(ttk.Treeview):
+    def __init__(self,master=None,**kw):
+        super().__init__(master,**kw)
+        self.bind("<Button-1>",lambda e: self.selectItem(e))
+    def selectItem(self,e):
+        item = self.focus()
+        print("selected Item",item,"content:",self.item(item))
+        print("event:",e)
 
 def getResourcePath(relPath):
     try:
