@@ -36,7 +36,7 @@ StringFileInfo(
     StringStruct(u'LegalCopyright', u'MIT'),
     StringStruct(u'OriginalFilename', u'Jira-Flow.exe'),
     StringStruct(u'ProductName', u'Jira-Flow'),
-    StringStruct(u'ProductVersion', u'1.4.1')])
+    StringStruct(u'ProductVersion', u'1.4.2')])
     ]),
 VarFileInfo([VarStruct(u'Translation', [1033, 1200])])
   ]
