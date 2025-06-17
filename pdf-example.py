@@ -9,7 +9,6 @@ for table in listTable:
     print("detected rows:",pdf.detectTableRows(tables.pages.selected,table))
 
 for table in listTable:
-    input()
     tables.selectTableByObj(table)
     rowList = pdf.detectTableRows(tables.pages.selected,table)
     print("rowList:",rowList)

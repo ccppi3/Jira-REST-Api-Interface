@@ -308,29 +308,20 @@ def searchForTable(page,tableNames,pageNr,fileName):
         if biggest:
             table.rec.x1 = biggest[0].x1
         log("def table:",transformRect(page,table.rec))
-        input()
             #search with other algorythm
     #remove double tables where if first point match remove the one witch seems to be a line
-   # toBeRemoved = []
-   # if len(tables)>1:
-   #     log("len tables: ",len(tables))
-   #     for ai,a in enumerate(tables):
-   #         for i in range(ai+1,len(tables)):
-   #             log("i: ",i)
-   #             if abs(a.rec.x0 - tables[i].rec.x0) < 1 and abs(a.rec.y0 - tables[i].rec.y0) < 1:
-   #                 log("\tpop table:", tables[i], "in favor of: ",a)
-   #                 toBeRemoved.append(i)
-   #     toBeRemoved.sort(reverse=True)
-   #     for i,e in enumerate(toBeRemoved):
-   #         tables.pop(i)
-    
-   # tbl = page.find_tables()
-   # print("tables(find_tables():",tbl)
-
-   # for tb in tbl:
-   #     print("\t tbl:",tb.extract())
-   # input()
-
+    toBeRemoved = []
+    if len(tables)>1:
+        log("len tables: ",len(tables))
+        for ai,a in enumerate(tables):
+            for i in range(ai+1,len(tables)):
+                log("i: ",i)
+                if abs(a.rec.x0 - tables[i].rec.x0) < 1 and abs(a.rec.y0 - tables[i].rec.y0) < 1:
+                    log("\tpop table:", tables[i], "in favor of: ",a)
+                    toBeRemoved.append(i)
+        toBeRemoved.sort(reverse=True)
+        for i,e in enumerate(toBeRemoved):
+            tables.pop(i)
     return tables
 
 
@@ -764,11 +755,11 @@ class Tables:
                     #posTableLine = checkBorderDown(page,recName)
                     borderContent = Border(outerRec.x0,outerRec.y1,outerRec.x1,table_border.y2,1)
                     log("tableborder.y2:",transformYPoint(page,table_border.y2))
-                    for i,rect in enumerate(getRectsInRange(page,borderContent)):
-                        string = page.get_textbox(rect)
-                        if string.strip():
-                            log("getRectsInRange:",string.strip())
-                            listA.append(string.strip())
+                   # for i,rect in enumerate(getRectsInRange(page,borderContent)):
+                   #     string = page.get_textbox(rect)
+                   #     if string.strip():
+                   #         log("getRectsInRange:",string.strip())
+                   #         listA.append(string.strip())
 
                     for i,[text,rect,font,size] in enumerate(getTextInRange(page,borderContent)):
                         string = text
