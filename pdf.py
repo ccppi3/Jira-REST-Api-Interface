@@ -355,9 +355,17 @@ def detectTableRows(page,table,tx=5,ty=6,bx=20,borderT=3,nextConLineHT=10):
             for hLine in hLines:
                 log("hLine:",transformRect(page,hLine))
             if hLines != False:
-                hLineHeader = hLines[1]
+                if len(hLines) > 1:
+                    hLineHeader = hLines[1]
+                elif len(hLines) == 1:
+                    hLineHeader = hLines[0]
+                else:
+                    hLineHeader = pymupdf.Rect(0,0,0,0)
+                    log("No hLineHeader Found!",level=err.ERROR)
+                input()
                 headerRec = pymupdf.Rect(hLineHeader.x0,hLineHeader.y0,table.rec.x1,hLineHeader.y1)
                 log("HeaderRec:",transformRect(page,headerRec))
+
                 for field in getFieldsInRange(page,headerRec):
                     log(transformRect(page,field))
                     fields.append(field)
