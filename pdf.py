@@ -352,8 +352,6 @@ def detectTableRows(page,table,tx=5,ty=6,bx=20,borderT=3,nextConLineHT=10):
     for rect in getRectsInRange(page,border,debug=False):
         if isLine(rect) == "vertical":
             hLines = getAllTableHLine(page,table.rec.x0,table.rec.y0,skip=0)
-            for hLine in hLines:
-                log("hLine:",transformRect(page,hLine))
             if hLines != False:
                 if len(hLines) > 1:
                     hLineHeader = hLines[1]
