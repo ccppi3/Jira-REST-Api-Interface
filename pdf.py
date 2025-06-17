@@ -362,7 +362,6 @@ def detectTableRows(page,table,tx=5,ty=6,bx=20,borderT=3,nextConLineHT=10):
                 else:
                     hLineHeader = pymupdf.Rect(0,0,0,0)
                     log("No hLineHeader Found!",level=err.ERROR)
-                input()
                 headerRec = pymupdf.Rect(hLineHeader.x0,hLineHeader.y0,table.rec.x1,hLineHeader.y1)
                 log("HeaderRec:",transformRect(page,headerRec))
 
