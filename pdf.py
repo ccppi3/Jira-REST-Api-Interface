@@ -241,6 +241,12 @@ def searchForTable(page,tableNames,pageNr,fileName):
                 if rectSize(rects[i],"x") < rectSize(rects[i+1],"x"):
                     rects[i],rects[i+1] = rects[i+1],rects[i]
         return rects
+    def _sortRightest(rects:list[pymupdf.Rect]):
+        for n in range(len(rects)-1,0,-1):
+            for i in range(0,n):
+                if rects[i].x1 < rects[i+1].x1:
+                    rects[i],rects[i+1] = rects[i+1],rects[i]
+        return rects
     def checkIsInside(outer:pymupdf.Rect,inner:pymupdf.Rect):
         if (outer.x0 < inner.x0) and (outer.x1 > inner.x1):
             if (outer.y0 < inner.y0) and (outer.y1 > inner.y1):
@@ -253,9 +259,9 @@ def searchForTable(page,tableNames,pageNr,fileName):
         return innerRect
     def getBiggest(page,recTable,yRecSearchPoint):
         _list=[]
-        for rec in getRectsInRange(page,Border(recTable.x0,recTable.y0,recTable.x0,page.bound().y1,30)):
+        for rec in getRectsInRange(page,Border(recTable.x0,recTable.y0,page.bound().x1,page.bound().y1,30)):
             if rectSize(rec,"x") > 10:
-                if round(rec.y1) - yRecSearchPoint  < 5:
+                if abs(round(rec.y1) - yRecSearchPoint)  < 5:
                     print("rec:",transformRect(page,rec))
                     _list.append(rec)
         return _list
@@ -263,9 +269,13 @@ def searchForTable(page,tableNames,pageNr,fileName):
     tables = []
     for name in tableNames:
         for rec in page.search_for(name):
-            for rec2 in getRectsInRange(page,Border(rec.x0-20,rec.y0,1000,rec.y1,2)):
-                if rec.x0 - rec2.x0 > 0 and rec.x0-rec2.x0 < 50:
-                    rec.x0 = rec2.x0
+            #find x point
+            #for rec2 in getRectsInRange(page,Border(rec.x0,rec.y0,rec.x1,rec.y1,2)):
+            #    if rec.x0 - rec2.x0 > 0 and rec.x0-rec2.x0 < 50:
+            #        rec.x0 = rec2.x0
+            #Here we need to find the most plausible x line left
+            rec.x0 = getTableLineLeftOfName(page,rec.x0,rec.y0)
+
             log("xpos for getTableLine",rec.x0)
             y = getTableLine(page,rec.x0,rec.y1,skip=1)
             log("y:",transformYPoint(page,y))
@@ -293,20 +303,35 @@ def searchForTable(page,tableNames,pageNr,fileName):
         for line in getHorizontalLines(page,50,5):
             log("TableLine:",transformRect(page,line))
             if abs(line.y0 - table.rec.y0) < 5:
-                table.rec.x0 = line.x0
-                table.rec.x1 = line.x1
-            for extensionRec in getRectsInRange(page,Border(table.rec.x0,table.rec.y0,page.bound().x1,page.bound().y1,3)):
-                if abs(extensionRec.y0-line.y0) < 3:
-                    if extensionRec.x1 > table.rec.x1:
-                        if abs(extensionRec.x1-table.rec.x1) < 5:
-                            log("extensionRec: ",extensionRec)
-                            table.rec.x1 = extensionRec.x1
-        biggest = getBiggest(page,table.rec,table.rec.y0)
+                if line.x1 > table.rec.x1:
+                    #table.rec.x0 = line.x0
+                    table.rec.x1 = line.x1
+
+        biggest = getBiggest(page,table.rec,table.rec.y0-3)
         biggest = _sort(biggest)
-        for line in biggest:
-            print("sorted:",line)
+        #for line in biggest:
+        #    print("sorted:",line)
         if biggest:
-            table.rec.x1 = biggest[0].x1
+            if biggest[0].x1 > table.rec.x1:
+                table.rec.x1 = biggest[0].x1
+        
+        extensionRecs = []
+
+        for line in getHorizontalLines(page,50,5):
+            extensionRecs.append(line)
+        extensionRecs = _sortRightest(extensionRecs)
+        #for x in extensionRecs:
+        #    print("sorted Rightest:",transformRect(page,x))
+        if extensionRecs:
+            extensionRec = extensionRecs[0]
+            if abs(extensionRec.y0-table.rec.y0) < 30:
+                if extensionRec.x1 > table.rec.x1:
+                    if abs(extensionRec.x0-table.rec.x1) < 5 or abs(extensionRec.x0 -table.rec.x0) < 5:
+                        log("extensionRec: ",extensionRec)
+                        table.rec.x1 = extensionRec.x1
+
+
+
         log("def table:",transformRect(page,table.rec))
             #search with other algorythm
     #remove double tables where if first point match remove the one witch seems to be a line
@@ -317,7 +342,7 @@ def searchForTable(page,tableNames,pageNr,fileName):
             for i in range(ai+1,len(tables)):
                 log("i: ",i)
                 if abs(a.rec.x0 - tables[i].rec.x0) < 1 and abs(a.rec.y0 - tables[i].rec.y0) < 1:
-                    log("\tpop table:", tables[i], "in favor of: ",a)
+                    log("\tpop table:", tables[i].name, "in favor of: ",a.name)
                     toBeRemoved.append(i)
         toBeRemoved.sort(reverse=True)
         for i,e in enumerate(toBeRemoved):
@@ -325,7 +350,7 @@ def searchForTable(page,tableNames,pageNr,fileName):
     return tables
 
 
-def detectTableRows(page,table,tx=5,ty=6,bx=20,borderT=3,nextConLineHT=10):
+def detectTableRows(page,table,tx=5,ty=6,bx=5,borderT=3,nextConLineHT=10):
     def probeRect(rect):
         def err(n):
             log(n, "is NULL",err=err.DEBUG)
@@ -341,7 +366,7 @@ def detectTableRows(page,table,tx=5,ty=6,bx=20,borderT=3,nextConLineHT=10):
     fields = []
     rects = []
 
-    border = Border(table.rec.x0-tx-bx,table.rec.y0-ty,table.rec.x0+tx,table.rec.y0+ty,borderT)
+    border = Border(table.rec.x0,table.rec.y0-ty,table.rec.x0+tx,table.rec.y0+ty,borderT)
     log("def border of table",table.rec.x0," ",page.bound().y1-table.rec.y0)
     log("{detectTableRows}tablerec:",table.rec)
     #search for vertical line
@@ -351,8 +376,10 @@ def detectTableRows(page,table,tx=5,ty=6,bx=20,borderT=3,nextConLineHT=10):
     log("Search for vertical line, count rects:",len(rects))
     for rect in getRectsInRange(page,border,debug=False):
         if isLine(rect) == "vertical":
+
             hLines = getAllTableHLine(page,table.rec.x0,table.rec.y0,skip=0)
             if hLines != False:
+                log("hLines:",rect)
                 if len(hLines) > 1:
                     hLineHeader = hLines[1]
                 elif len(hLines) == 1:
@@ -384,9 +411,6 @@ def detectTableRows(page,table,tx=5,ty=6,bx=20,borderT=3,nextConLineHT=10):
                                     rowNameList.append(txt)
             else:
                 log("No hline header found",level=err.ERROR)
-        else:
-            log("/tline not vertical")
-            print("/trec:",transformRect(page,rect))
 
 
     return rowNameList
@@ -526,7 +550,48 @@ def isLine(rect,thresold = 3):
     elif vertical == True:
         return "vertical"
 
-def getTableLine(page,xPosTabelLine,yPosStartlineDown,borderWidth=5,jointTolerance=2,skip=0):
+def getTableLineLeftOfName(page,xPosName,yPosName,borderWidth=3,jointTolerance=2,skip=0):
+    leftLimit = xPosName-borderWidth
+    rightLimit = xPosName+borderWidth
+
+    def _filter(drawings,page,xPosName,yPosName):
+        listVerticalRects = []
+        for drawing in drawings:
+            rect:pymupdf.Rect = drawing['items'][0][1]
+            if type(rect) == pymupdf.Rect:
+                if rect.x0 < xPosName:
+                    if abs(rect.y0 - yPosName) < 10:                
+                        listVerticalRects.append(rect)
+        return listVerticalRects
+
+    def _sort(rects:list[pymupdf.Rect]):
+        for n in range(len(rects)-1,0,-1):
+            for i in range(0,n):
+                if(rects[i].x1 < rects[i+1].x1):
+                    rects[i],rects[i+1] = rects[i+1],rects[i]
+        return rects
+
+    drawings = page.get_drawings()
+    verticalRects = _filter(drawings,page,xPosName,yPosName)
+    for rect in verticalRects:
+        log("[getTableLineLeftOfName]filtered rects: ",rect)
+    verticalRects = _sort(verticalRects)
+    for rect in verticalRects:
+        log("[getTableLineLeftOfName]sorted rects: ",transformRect(page,rect))
+
+    for rect in verticalRects:
+        print("[getTableLine] sorted vRect:",transformRect(page,rect))
+
+    print("connected lines:")
+    for rect in verticalRects:
+        print("\t  connected vRect:",transformRect(page,rect))
+    
+    if verticalRects:
+        return verticalRects[0].x0
+    else:
+        return False
+
+def getTableLine(page,xPosTabelLine,yPosStartlineDown,borderWidth=3,jointTolerance=2,skip=0):
     leftLimit = xPosTabelLine-borderWidth
     rightLimit = xPosTabelLine+borderWidth
 
@@ -535,6 +600,8 @@ def getTableLine(page,xPosTabelLine,yPosStartlineDown,borderWidth=5,jointToleran
         for drawing in drawings:
             rect:pymupdf.Rect = drawing['items'][0][1]
             if type(rect) == pymupdf.Rect:
+                if abs(round(rect.x0)-469) < 2:
+                    print("\trec:",transformRect(page,rect))
                 if(rect.x1-rect.x0)<borderWidth:
                     if(rect.y1-rect.y0)>jointTolerance:
                         if(rect.x0 <rightLimit and rect.x0 > leftLimit):
@@ -542,7 +609,7 @@ def getTableLine(page,xPosTabelLine,yPosStartlineDown,borderWidth=5,jointToleran
                                 #print("\t----->BigBox: ",drawing)
                                 #print("keys:",drawing.keys())
                                 #print("seqno:",drawing['width'])
-                                #print("\trec:",transformRect(page,rect))
+
                                 listVerticalRects.append(rect)
         return listVerticalRects
 
@@ -572,7 +639,7 @@ def getTableLine(page,xPosTabelLine,yPosStartlineDown,borderWidth=5,jointToleran
     verticalRects = _sort(verticalRects)
 
     for rect in verticalRects:
-        print("\t vRect:",rect)
+        print("[getTableLine] sorted vRect:",transformRect(page,rect))
 
     verticalRects = getConnected(verticalRects,jointTolerance,skip=skip)
     print("connected lines:")
@@ -619,7 +686,7 @@ def searchTableEnd(page,table_full,t=10,borderT=5,thresholdIsLongLine=20): #sear
             return rect
     return False
 
-def searchTableDown(page,table_full,t1=10,borderWidth=2,magicY=1,endAppendY=10,magicX=3,borderT=5):# How much lookahead for table end? better to much than to little
+def searchTableDown(page,table_full,t1=10,borderWidth=2,magicY=5,endAppendY=10,magicX=3,borderT=5):# How much lookahead for table end? better to much than to little
     log("{SearchTableDown}")
     biggesty = 0
     smallesty = None

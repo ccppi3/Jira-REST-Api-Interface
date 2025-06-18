@@ -19,6 +19,7 @@ for table in listTable:
     print("table name:",table.getName())
     for i in tables.getObjectsFromTable():
         print(i)
+    input()
 
 
 
