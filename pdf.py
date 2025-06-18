@@ -291,7 +291,7 @@ def searchForTable(page,tableNames,pageNr,fileName):
         log("\t",table.name,"No table end found use algo2")
         rec = searchTableDown(page,table)
         if rec:
-            table.rec.y0 = rec.y0
+            #table.rec.y0 = rec.y0
             table.rec.y1 = rec.y1
             log("\tres algo2:")
             print("\t\trec:",transformRect(page,table.rec))
@@ -366,22 +366,17 @@ def detectTableRows(page,table,tx=5,ty=6,bx=5,borderT=3,nextConLineHT=10):
     fields = []
     rects = []
 
-    border = Border(table.rec.x0,table.rec.y0-ty,table.rec.x0+tx,table.rec.y0+ty,borderT)
-    log("def border of table",table.rec.x0," ",page.bound().y1-table.rec.y0)
+    border = Border(table.rec.x0,table.rec.y0,table.rec.x0+tx,table.rec.y0+ty,borderT)
     log("{detectTableRows}tablerec:",table.rec)
-    #search for vertical line
-    for rect in getRectsInRange(page,border,debug=False):
-        rects.append(rect)
 
     log("Search for vertical line, count rects:",len(rects))
     for rect in getRectsInRange(page,border,debug=False):
         if isLine(rect) == "vertical":
-
             hLines = getAllTableHLine(page,table.rec.x0,table.rec.y0,skip=0)
             if hLines != False:
                 log("hLines:",rect)
                 if len(hLines) > 1:
-                    hLineHeader = hLines[1]
+                    hLineHeader = hLines[0]
                 elif len(hLines) == 1:
                     hLineHeader = hLines[0]
                 else:

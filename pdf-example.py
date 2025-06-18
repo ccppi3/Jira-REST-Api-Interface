@@ -5,8 +5,9 @@ tables.selectPage(0)
 listTable = tables.setTableNames(["Tabelle 1","NEUEINTRITT","Arbeitsplatzwechsel","NEUEINTRITTE","Wiedereintritt"])
 #listTable = tables.setTableNames(["Wiedereintritt"])
 
-for table in listTable:
-    print("detected rows:",pdf.detectTableRows(tables.pages.selected,table))
+#for table in listTable:
+#    tables.selectTableByObj(table)
+#    print("detected rows:",pdf.detectTableRows(tables.pages.selected,table))
 
 for table in listTable:
     tables.selectTableByObj(table)
