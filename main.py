@@ -211,7 +211,7 @@ def _runPdfParser(newFileList): #helper function witch wraps all the parsing cal
             print(msg)
             yield "Parse:" + msg[len(msg)-1] + " Page " + str(pageNr)
             tables.selectPage(pageNr)
-            listTable = tables.setTableNames(["Tabelle 1","NEUEINTRITT","Arbeitsplatzwechsel","WIEDEREINTRITT","NEUEINTRITTE"])
+            listTable = tables.setTableNames(["Tabelle 1","NEUEINTRITT","Arbeitsplatzwechsel","WIEDEREINTRITT"])
             for i,table in enumerate(listTable):
                 tables.selectTableByObj(table)
                 rowList = pdf.detectTableRows(tables.pages.selected,table)

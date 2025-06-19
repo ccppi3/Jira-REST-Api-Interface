@@ -1,8 +1,8 @@
 import pdf
 
 tables = pdf.Tables("tmp.pdf")
-tables.selectPage(0)
-listTable = tables.setTableNames(["Tabelle 1","NEUEINTRITT","Arbeitsplatzwechsel","NEUEINTRITTE","Wiedereintritt"])
+tables.selectPage(2)
+listTable = tables.setTableNames(["Tabelle 1","NEUEINTRITT","Arbeitsplatzwechsel","Wiedereintritt"])
 #listTable = tables.setTableNames(["Wiedereintritt"])
 
 #for table in listTable:
@@ -17,10 +17,10 @@ for table in listTable:
     tables.parseTable()
 
 
-    print("table name:",table.getName())
+    print("Result: \ntable name:",table.getName())
     for i in tables.getObjectsFromTable():
         print(i)
-    input()
+#    input()
 
 
 

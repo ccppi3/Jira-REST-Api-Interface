@@ -259,7 +259,7 @@ def searchForTable(page,tableNames,pageNr,fileName):
         return innerRect
     def getBiggest(page,recTable,yRecSearchPoint):
         _list=[]
-        for rec in getRectsInRange(page,Border(recTable.x0,recTable.y0,page.bound().x1,page.bound().y1,30)):
+        for rec in getRectsInRange(page,Border(recTable.x0,recTable.y0,page.bound().x1,page.bound().y1,9)):
             if rectSize(rec,"x") > 10:
                 if abs(round(rec.y1) - yRecSearchPoint)  < 5:
                     print("rec:",transformRect(page,rec))
@@ -279,6 +279,7 @@ def searchForTable(page,tableNames,pageNr,fileName):
             log("xpos for getTableLine",rec.x0)
             y = getTableLine(page,rec.x0,rec.y1,skip=1)
             log("y:",transformYPoint(page,y))
+            log("rec.y0:",transformYPoint(page,rec.y0))
             if y != False:
                 rec.y1 = y
             tables.append(Tbl(rec,name,fileName,pageNr))
@@ -381,21 +382,22 @@ def detectTableRows(page,table,tx=5,ty=6,bx=5,borderT=3,nextConLineHT=10):
                     hLineHeader = hLines[0]
                 else:
                     hLineHeader = pymupdf.Rect(0,0,0,0)
-                    log("No hLineHeader Found!",level=err.ERROR)
+                    log("[",table.name,"]","No hLineHeader Found!",level=err.ERROR)
                 headerRec = pymupdf.Rect(hLineHeader.x0,hLineHeader.y0,table.rec.x1,hLineHeader.y1)
-                log("HeaderRec:",transformRect(page,headerRec))
-
+                log("[",table.name,"]","HeaderRec:",transformRect(page,headerRec))
+                table.rec.y1 = hLines[len(hLines)-1].y1
+                log("[",table.name,"]","table.rec.y1",transformYPoint(page,table.rec.y1))
                 for field in getFieldsInRange(page,headerRec):
-                    log(transformRect(page,field))
+                    log("[",table.name,"]",transformRect(page,field))
                     fields.append(field)
 
-                for fieldRow in getHeader(page,fields,headerRec):
+                for fieldRow in getHeader(page,fields,headerRec,name=table.name):
                     fieldRow = pymupdf.Rect(fieldRow.x0,fieldRow.y0,fieldRow.x1,fieldRow.y1+10)
-                    log("fieldrow:",transformRect(page,fieldRow))
+                    log("[",table.name,"]",table.name,"fieldrow:",transformRect(page,fieldRow))
                     fullText = ""
                     i=0
                     for text,rect,font,size in getTextInRange(page,RectToBorder(fieldRow),t=5,debug=False):
-                        log("[fieldRow]Text: ",text)
+                        log("[",table.name,"]","\t[fieldRow]Text: ",text)
                         text = text.strip()
                         if text:
                             splitText = cutTextOverRect(page,fieldRow,text,font,size)
@@ -405,12 +407,12 @@ def detectTableRows(page,table,tx=5,ty=6,bx=5,borderT=3,nextConLineHT=10):
                                 for txt in splitText:
                                     rowNameList.append(txt)
             else:
-                log("No hline header found",level=err.ERROR)
+                log("[",table.name,"]","No hline header found",level=err.ERROR)
 
 
     return rowNameList
 
-def getHeader(page,fields,rectTable,thresold=6):
+def getHeader(page,fields,rectTable,thresold=6,name=None):
     lowestY = None
     filteredFields = []
     log("rectTable:",rectTable)
@@ -426,7 +428,7 @@ def getHeader(page,fields,rectTable,thresold=6):
             for text,rect,font,size in getTextInRange(page,RectToBorder(field),debug=False):
                 fullText = fullText + text
 
-            log("DataField:",transformRect(page,field),"field size:",sizeField,"text: ",text)
+            log(str(name),"DataField:",transformRect(page,field),"field size:",sizeField,"text: ",text)
 
             #find lowest row y
             if lowestY == None:
@@ -575,7 +577,7 @@ def getTableLineLeftOfName(page,xPosName,yPosName,borderWidth=3,jointTolerance=2
         log("[getTableLineLeftOfName]sorted rects: ",transformRect(page,rect))
 
     for rect in verticalRects:
-        print("[getTableLine] sorted vRect:",transformRect(page,rect))
+        print("[getTableLineLeftOfName] sorted vRect:",transformRect(page,rect))
 
     print("connected lines:")
     for rect in verticalRects:
@@ -609,9 +611,16 @@ def getTableLine(page,xPosTabelLine,yPosStartlineDown,borderWidth=3,jointToleran
         return listVerticalRects
 
     def _sort(rects:list[pymupdf.Rect]):
+        log("sort")
         for n in range(len(rects)-1,0,-1):
             for i in range(0,n):
-                if(rects[i].y1 > rects[i+1].y1):
+                if(rects[i].y0 < rects[i+1].y0):
+                    rects[i],rects[i+1] = rects[i+1],rects[i]
+        return rects
+    def _sort2(rects:list[pymupdf.Rect]):
+        for n in range(len(rects)-1,0,-1):
+            for i in range(0,n):
+                if(rects[i].y0 > rects[i+1].y0):
                     rects[i],rects[i+1] = rects[i+1],rects[i]
         return rects
     def getConnected(rects,jointTolerance,skip=0):
@@ -632,6 +641,7 @@ def getTableLine(page,xPosTabelLine,yPosStartlineDown,borderWidth=3,jointToleran
     verticalRects = _filter(drawings,page,leftLimit,rightLimit,borderWidth,yPosStartlineDown)
 
     verticalRects = _sort(verticalRects)
+    #verticalRects = _sort2(verticalRects)
 
     for rect in verticalRects:
         print("[getTableLine] sorted vRect:",transformRect(page,rect))
@@ -769,7 +779,7 @@ class Tables:
         table.entries = []
         table.state = self.State()
         page = self.pages.selected
-        table.rec.y1 = getTableLine(page,table.rec.x0,table.rec.y0,skip=1)
+        #table.rec.y1 = getTableLine(page,table.rec.x0,table.rec.y0,skip=1)
         table.border = Border(table.rec.x0,table.rec.y0,table.rec.x1,table.rec.y1,5)
 
         print("table:",transformRect(page,table.rec))
@@ -778,12 +788,12 @@ class Tables:
         for init,rowName in enumerate(self.selected_table.rowNameList):
             if init == 0:
                 table.entries.append(Entry())
-            _list,realName = self.searchContentFromRowName(page,rowName,table.border)
+            _list,realName = self.searchContentFromRowName(page,rowName,table.border,tableName=table.name)
 
             for index,content in enumerate(_list):
                 if(index > len(table.entries)-1):
                     table.entries.append(Entry())
-                log("{PARSE TABLE} entry: ",table.entries[index],"_")
+                #log("{PARSE TABLE} entry: ",table.entries[index],"_")
                 if(len(rowName) < len(realName)):
                     rowName = realName.replace("\n","-").replace(" ","")
                 setattr(table.entries[index],rowName,content)
@@ -793,7 +803,9 @@ class Tables:
         table = self.selected_table
         for x in table.entries:
             yield x
-    def searchContentFromRowName(self,page,rowName,table_border,tx0=4,ty0=2,tx1=1,borderWidth=3):
+    def searchContentFromRowName(self,page,rowName,table_border,tx0=4,ty0=2,tx1=1,borderWidth=3,tableName=""):
+        #on multiline header case we do choose a to little y0 for the content
+        #maybe it should be y1? would make more sense
         def checkIsInside(outer:pymupdf.Rect,inner:pymupdf.Rect):
             if (outer.x0 < inner.x0) and (outer.x1 > inner.x1):
                 if (outer.y0 < inner.y0) and (outer.y1 > inner.y1):
@@ -811,17 +823,17 @@ class Tables:
         names = page.search_for(rowName) #returns list of Rect
         for recName in names:
             outerRec = searchOuter(page,table_border,recName)
-            log("--\nouter:",transformRect(page,outerRec))
+            #log("--\nouter:",transformRect(page,outerRec))
 
             border = Border(outerRec.x0,outerRec.y0,outerRec.x1,outerRec.y1,1)
             if table_border.check(outerRec.x0,outerRec.y0): # is the row inside the border/table?
                 real_name = page.get_textbox(outerRec).strip()
-                log(real_name,";",rowName,";",transformRect(page,outerRec))
+                #log(real_name,";",rowName,";",transformRect(page,outerRec))
 
                 if real_name == rowName or (real_name in rowName) or (rowName in real_name) :
                     #posTableLine = checkBorderDown(page,recName)
-                    borderContent = Border(outerRec.x0,outerRec.y1,outerRec.x1,table_border.y2,1)
-                    log("tableborder.y2:",transformYPoint(page,table_border.y2))
+                    borderContent = Border(outerRec.x0,outerRec.y1+5,outerRec.x1,table_border.y2,1)
+                    log(tableName,"\n\touterRec:",outerRec,"table_border.y2",transformYPoint(page,table_border.y2))
                    # for i,rect in enumerate(getRectsInRange(page,borderContent)):
                    #     string = page.get_textbox(rect)
                    #     if string.strip():
@@ -830,12 +842,12 @@ class Tables:
 
                     for i,[text,rect,font,size] in enumerate(getTextInRange(page,borderContent)):
                         string = text
-                        log("rect(",i,"):",transformRect(page,rect))
+                        #log("rect(",i,"):",transformRect(page,rect))
                         if string.strip():
-                            log("string: ",string, "rects:",transformRect(page,rect))
+                           # log("string: ",string, "rects:",transformRect(page,rect))
                             for end in self.tableNames:
                                 if end in string.strip():
-                                    log("abort")
+                                    #log("abort")
                                     break
                             else:
                                 listB.append(string.strip())
@@ -860,7 +872,7 @@ class Tables:
                 else:
                     log("no match")
             else:
-                log("rec(",rowName,") not inside table border")
+                #log("rec(",rowName,") not inside table border")
                 log("table_border:",transformPdfToPymupdf(page,table_border.x,table_border.y,table_border.x2,table_border.y2))
         return [],""
 
@@ -906,7 +918,7 @@ def getAllTableHLine(page,xPosTabelLine,yPosStartlineDown,borderWidth=5,jointTol
     verticalRects = _sort(verticalRects)
 
     for rect in verticalRects:
-        print("\t vRect:",rect)
+        print("\t vRect:",transformRect(page,rect))
 
     verticalRects = getConnected(verticalRects,jointTolerance,skip=skip)
     print("connected lines:")
